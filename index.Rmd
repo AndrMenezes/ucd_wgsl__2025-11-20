@@ -306,15 +306,22 @@ tree parametrised by:
   - Each branch node $b\in \mathcal{B}_h$ there is a spitting rule of the form
 $\lbrack x_{j_{b}} \leq c_b\rbrack$.
   - $\mathcal{M}_h = \{\mu_{ht}\colon t \in \mathcal{L}_h\}$ are leaf node parameters with $\mu_{ht} \in \mathbb{R}$.
+]
 
 --
+
+.font75[
 
 - The prior is $\pi(\mathcal{T}_h, \mathcal{M}_h) = \pi_\mathcal{T}(\mathcal{T}_h)\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)$.
   - $\pi_\mathcal{T}(\mathcal{T}_h)$ is a branching process `r Citep(bib, "Chipman1998")`.
   - $\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)=\prod_{t \in \mathcal{L}_h} \pi_\mu(\mu_{ht})$,
 where $\pi_\mu$ is chosen so that it is conditionally conjugate.
 
+]
+
 --
+
+.font75[
 
 - Inference on $\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m$
 is conducted by MCMC using Bayesian backfitting `r Citep(bib, "Hastie2000")`.
@@ -322,7 +329,6 @@ is conducted by MCMC using Bayesian backfitting `r Citep(bib, "Hastie2000")`.
 - Theoretical guard:
   - Gaussian process limit as $m \rightarrow \infty$ `r Citep(bib, "Linero2017")`.
   - Good rates of posterior convergence `r Citep(bib, "Linero2018", "Rockova2020")`.
-
 ]
 
 ---
