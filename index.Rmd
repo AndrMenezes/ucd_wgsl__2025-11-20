@@ -60,21 +60,21 @@ range(tab_emp[, 2])
 
 - Introduction
 
-- Dealing with sparse in count-compositional data
+- Zero-inflation in count-compositional data
 <!-- Zero-and-$N$-inflated count-compositional distributions -->
 
 - Bayesian nonparametric models for sparse count-compositional data
   - The BART prior
   - The novel Bayesian nonparametric models
-  - Inference via MCMC
-  - Toy simulated example
+  - Inference
+  - Simulated example
 
 - Modern pollen-climate application
 
 - Conclusions
 
 ---
-# What is (count)-compositional data?
+# What is count-compositional data?
 
 > Multivariate counts constrained by a random or fixed total.
 
@@ -83,13 +83,14 @@ with $n$ samples and $d$ categories.
 
 - Each row is a random vector $\mathbf{Y}_i = (Y_{i1}, \ldots, Y_{id})$
 with non-negative integer values defined in the discrete simplex space:
-$$\mathbb{S}_N^d = \left\{\mathbf{Y}_i \in \left(0, 1, \ldots, N\right)^d; \sum_{j=1}^d Y_{ij}=N_i\right\}.$$
+$$\mathbb{S}_N^d = \left\{\mathbf{Y}_i \in \left(0, 1, \ldots, N_i\right)^d; \sum_{j=1}^d Y_{ij}=N_i\right\}.$$
 
 
 - Examples include:
   - pollen counts observed in sediments dating from several species.
   - genomic sequencing data (microbiome, single-cell RNA).
   - total votes of each candidate for the Irish presidential election.
+
 
 
 ---
@@ -111,6 +112,13 @@ data_pollen |>
 ---
 ## Motivating example
 
+```{r map-location, out.width="100%", fig.align="center"}
+knitr::include_graphics("./figures/mapping_location_total_zero.png")
+```
+
+---
+## Motivating example
+
 ```{r plot-pollen, echo = FALSE, out.width="90%"}
 data_pollen |>
   dplyr::filter(specie %in% sp[1:9]) |>
@@ -127,25 +135,47 @@ data_pollen |>
 
 <!-- - High-dimension: $d = 28$ pollen species. -->
 
-1. Sparse: $63.21\%$ of counts are zero.
+- Sparse: $63.21\%$ of counts are zero.
+  - $N$-inflated observations:
+```{r n-inflated}
+dplyr::select(dplyr::filter(data_pollen, prop == 1), id, specie, total, prop, 
+              gdd5, mtco, aet.pet, longitude, latitude, altitude)
+```
 
-2. Heterogeneity: complex cross-sample variation, $\operatorname{DI}(Y_j)=\operatorname{Var}(Y_j)/\mathbb{E}(Y_j)$ ranging from $41.15$ (_Ostrya_) and $470.18$ (_Cedrus_).
+- Heterogeneity: complex cross-sample variation, $\operatorname{DI}(Y_j)=\operatorname{Var}(Y_j)/\mathbb{E}(Y_j)$ ranging from $41.15$ (_Ostrya_) and $470.18$ (_Cedrus_).
 
-3. Unknown relationship between the climate variables and the pollen composition.
-  - Gaussian markov random field (GMRF) have been used as a smooth prior function in one,two and three-dimensional climate space `r Citet(bib, c("Haslett2006", "SalterTownshend2012", "Sweeney2012", "Tipton2019"))`
+- Unknown relationship between the climate variables and the pollen composition.
+  - Gaussian markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Sweeney2012", "Tipton2019"))`.
 
 <!-- , and the taxa-specific excess of zeros. -->
 
 
 ---
-count: false
-class: middle, inverse
-# Dealing with sparse count-compositional data
+## Related work
+
+> - **Paleoclimate studies**: break the multinomial into independent univariate 
+components using expert-informed hierarchical category (pollen species) structures.
+`r Citep(bib, c("SalterTownshend2012", "Sweeney2012"))`.
+> - **Microbiome studies**: explicit account for zero-inflation in count-composition data,
+but rely simple linear regression structure:
+`r Citep(bib, c("Tang2018", "Zeng2023", "Koslovsky2023"))`.
+
+--
+
+.font120[Our contributions]
+
+> 1. A unified framework for zero-inflation in count-compositional data `r Citep(bib, "Menezes2025")`.
+> 2. Bayesian nonparametric models that jointly address zero-inflation, overdispersion, unobserved latent effects, and complex covariate relationships.
 
 ---
-# Dealing with sparse count-compositional data
+count: false
+class: middle, inverse
+# Zero-inflation in count-compositional data
 
-- Zeros may have different meanings. According to `r Citet(bib, "BlascoMoreno2019")`:
+---
+# Zero-inflation in count-compositional data
+
+- Zeros may have different meanings `r Citep(bib, "BlascoMoreno2019")`:
   - Sampling zeros: due to sampling variability.
   - Structural zeros: related to constraints on experimental conditions (data collection). 
 
@@ -242,7 +272,7 @@ as the *individual-level* count probabilities, for $i\in\{1,\ldots,n\}$ and $j\i
 
 --
 
-> We show that zero-and-_N_-inflated Dirichlet-multinomial (ZANIDM) distribution
+> We show that the zero-and-_N_-inflated Dirichlet-multinomial (ZANIDM) distribution
 intoduced by `r Citet(bib, "Koslovsky2023")`
 also admits a finite mixture representation and we derive moments, marginals, and fully conjugate Bayesian inference schemes for both distributions.
 
@@ -282,7 +312,7 @@ $\lbrack x_{j_{b}} \leq c_b\rbrack$.
 where $\pi_\mu$ is chosen so that it is conditionally conjugate.
 
 - Inference on the BART parameters $\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m$
-is performed by MCMC methods using the Bayesian backfitting `r Citep(bib, "Hastie2000")`.
+is performed by MCMC methods using Bayesian backfitting `r Citep(bib, "Hastie2000")`.
 
 - Theoretical guard
   - Gaussian process limit as $m \rightarrow \infty$ `r Citep(bib, "Linero2017")`.
@@ -290,13 +320,19 @@ is performed by MCMC methods using the Bayesian backfitting `r Citep(bib, "Hasti
 
 ]
 
+---
+# The BART prior
+
+```{r trees-mateus, out.width="70%", fig.align="center"}
+knitr::include_graphics("./figures/trees_from_mmm.png")
+```
+
 
 ---
 # The ZANIM-BART model
 
-- We follow the log-linear BART prior of `r Citet(bib, "Murray2021")` 
-and assume that the *population-level* count probabilities, $\pmb{\theta}$, 
-are related to the covariate level $\mathbf{x}_i$ as follows
+- *population-level* count probabilities, $\pmb{\theta}$ `r Citep(bib, "Murray2021")`:
+
 $$\theta_{ij} = \frac{f^{(j)}(\mathbf{x}_i)}{\sum_{k=1}^d f^{(k)}(\mathbf{x}_i)},
 \quad \textrm{with} \quad
 \log f^{(j)}(\mathbf{x}_i) =
@@ -307,9 +343,10 @@ for the category $j$ and
 $\Lambda^{(\lambda_j)}_{h} = \{\lambda_{htj}\colon \mathcal{L}^{(\lambda_j)}_h\}$ 
 the corresponding set of leaf nodes parameters with $\lambda_{htj}>0$.
 
-- We further use the probit-BART prior of `r Citet(bib, "Chipman2010")` and
-assume that the *population-level* structural zero probabilities,
-$\pmb{\zeta}$, at covariate level $\mathbf{x}_i$ are given by
+--
+
+- *population-level*  structural zero probabilities, $\pmb{\zeta}$ `r Citep(bib, "Chipman2010")`:
+
 $$\zeta_{ij} = \Phi\left( f^{(j)}_0(\mathbf{x}_i) \right)
 = \Phi\left\lbrack \sum_{h=1}^{m_\zeta} 
 g\left(\mathbf{x}_i; \mathcal{T}^{(\zeta_j)}_{h}, \mathcal{M}^{(\zeta_j)}_{h}\right)
@@ -322,7 +359,7 @@ are the category-specific tree structure and leaf nodes parameters, respectively
 ---
 # Incoporating heterogeneity: The ZANIM-LN-BART model
 
-- We add a multivariate Gaussian random effect,
+- Include a multivariate Gaussian random effect,
 $\mathbf{u}_i = (u_{i1}, \ldots, u_{id}) \sim \operatorname{Normal}_d\left\lbrack \pmb{0}, \pmb{\Sigma}_U \right\rbrack$,
 on the *population-level* count probabilities,
 $\pmb{\theta}$, as follows:
@@ -332,10 +369,22 @@ j\in\{1,\ldots,d\}.$$
 --
 
 - Identifiability is achieved through a sum-to-zero constraint:
-  - $\mathbf{u}_i=\mathbf{B}\mathbf{v}_i$,
-  - $\mathbf{v}_i \sim \operatorname{Normal}_{d-1}\left\lbrack \pmb{0}, \pmb{\Sigma}_V \right\rbrack$
-  - $\mathbf{B}$ is $d\times d-1$ orthogonal matrix, and $\pmb{\Sigma}_U = \mathbf{B} \pmb{\Sigma}_V \mathbf{B}^\top$.
-  - We place a factor analysis hyper-prior on $\pmb{\Sigma}_V$.
+  - $\mathbf{u}_i=\mathbf{B}\mathbf{v}_i$, $\mathbf{v}_i \sim \operatorname{Normal}_{d-1}\left\lbrack \pmb{0}, \pmb{\Sigma}_V \right\rbrack$, where $\mathbf{B}$ is $d\times d-1$ orthogonal matrix, and $\pmb{\Sigma}_U = \mathbf{B} \pmb{\Sigma}_V \mathbf{B}^\top$.
+  - Sample from $\mathbf{v}_i$ using elliptical slice sampling
+  - Factor analysis hyper-prior on $\pmb{\Sigma}_V$.
+
+$$\mathbf{v}_i = \pmb{\Gamma} \pmb{\eta}_i + \pmb{\epsilon}_i,$$
+where $\pmb{\Gamma} = \left\lbrack \gamma_{hj}\right\rbrack_{h=1,\ldots,d-1}^{j=1,\ldots,k}$ is a
+$d-1 \times k$ factor loading matrix, 
+$\pmb{\eta}_i \sim \operatorname{Normal}_k\lbrack \mathbf{0}_k, \mathbf{I}_k\rbrack$ and
+$\pmb{\epsilon}_i \sim \operatorname{Normal}_{d-1}\left\lbrack\mathbf{0}_{d-1}, \pmb{\Psi}\right\rbrack$, with
+$\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}$.
+
+<!-- - Full conditional Gaussian updates are readily available for  -->
+<!-- $\pmb{\Gamma}$, $\pmb{\Psi}$, and $\pmb{\eta}_i$. -->
+
+<!-- - The variance of $\mathbf{v}_i$ is decomposed as $\pmb{\Sigma}_V = \pmb{\Gamma} \pmb{\Gamma}^\top + \pmb{\Psi}$. -->
+
 
 <!-- - Similar formulation is proposed by Zeng et al. (2023) with different identifiability and -->
 <!-- hyper-prior choices. -->
@@ -343,20 +392,16 @@ j\in\{1,\ldots,d\}.$$
 ---
 # Data augmentation
 
-.font80[
+.font70[
 
 - Let $\pmb{f} = (f^{(1)}, \ldots, f^{(d)})$ and $\pmb{f}_0 = (f_0^{(1)}, \ldots, f_0^{(d)})$
 denote the independent BART priors that defined our models.
 
-- We adapt the data augmentation scheme of `r Citet(bib, "Menezes2025")`, 
-working with the stochastic representation of ZANIM distribution and 
-introducing the latent variables
+- Data augmentation scheme of `r Citet(bib, "Menezes2025")`:
 $$(\phi_i \mid \mathbf{y}_i, \mathbf{z}_i, \pmb{f})  \overset{\operatorname{ind.}}{\sim}
 \operatorname{Gamma}\left\lbrack N_i, \sum_{j=1}^d z_{ij}f^{(j)}(\mathbf{x}_i)e^{u_{ij}}\right\rbrack,
 \quad i\in\{1,\ldots,n\}$$
-where $z_{ij}  \overset{\operatorname{ind.}}{\sim} \operatorname{Bernoulli}\left\lbrack 1 - \Phi\left(f^{(j)}_0(\mathbf{x}_i)\right)\right\rbrack$.
-This construction yields the following augmented likelihood
-
+where $z_{ij}  \overset{\operatorname{ind.}}{\sim} \operatorname{Bernoulli}\left\lbrack 1 - \Phi\left(f^{(j)}_0(\mathbf{x}_i)\right)\right\rbrack$. This results in the augmented likelihood:
 $$p(\pmb{f}, \pmb{f}_0; \mathbf{y}, \mathbf{x}, \mathbf{u}, \mathbf{z}, \pmb{\phi})
 \propto
 \prod_{i=1}^n
@@ -368,7 +413,7 @@ f^{(j)}(\mathbf{x}_i)^{z_{ij}\,y_{ij}}e^{-\phi_i\,z_{ij}f^{(j)}(\mathbf{x}_i)}
 \right\}
 p(\mathbf{u}_i; \pmb{\Sigma}_U).$$
 
-- The posterior distribution of $z_{ij}$ is
+- The posterior distribution of $z_{ij}$ is:
 $$(z_{ij} \mid y_{ij}, \phi_i, \pmb{f}, \pmb{f}_0) \overset{\operatorname{ind.}}{\sim}
 \begin{cases} 1 & \textrm{if} \: y_{ij} > 0\\
 \operatorname{Bernoulli}\left\lbrack
@@ -380,88 +425,18 @@ e^{-\phi_i u_{ij}f^{(j)}(\mathbf{x}_i)}}
 \end{cases}$$
 ]
 
+--
 
----
-# MCMC inference: Bayesian backfitting for $f^{(j)}$
+.font70[
 
-- Generalised Bayesian backfiting of `r Citet(bib, "Murray2021")` for sampling from
-$f^{(j)}$.
+- Independent BART updates for each $j\in\{1,\ldots,d\}$:
+  - $(\mathcal{T}^{(\lambda_j)}_h, \Lambda_h^{(\lambda_j)})_{h=1}^{m_\lambda}$ using
+  `r Citet(bib, "Murray2021")` **generalised Bayesian backfitting** algorithm;
+  
+  - $(\mathcal{T}^{(\zeta_j)}_h, \mathcal{M}_h^{(\zeta_j)})_{h=1}^{m_\zeta}$ using
+  `r Citet(bib, "Chipman2010")` **Bayesian backfitting** algorithm;
 
-Define $f^{(j)}_{(h)}(\mathbf{x}_i) = \prod_{\ell \neq h}g(\mathbf{x}_i; \mathcal{T}^{(\lambda_j)}_{\ell},\Lambda^{(\lambda_j)}_{\ell})$ the fit from all
-but the $h$-th tree. Assume the prior for the leaf nodes parameters
-$\lambda_{htj} \overset{\operatorname{ind.}}{\sim} \operatorname{Gamma}\lbrack c_0, d_0 \rbrack$,
-it can be shown that
-$$\begin{align}
-\pi\left(\mathcal{T}^{(\lambda_j)}_{h} \mid \mathcal{T}^{(\lambda_j)}_{(h)}, \Lambda^{(\lambda_j)}_{(h)}, \mathbf{y},
-\mathbf{z}, \pmb{\phi}\right) &\propto
-p\left(\mathcal{T}^{(\lambda_j)}_{h}\right)
-\prod_{t \in \mathcal{L}^{(\lambda_j)}_{h}}
-\frac{d_0^{c_0}}{\Gamma(c_0)}
-\int\lambda_{htj}^{r_{htj} + c_0 - 1}e^{-(s_{htj} + d_0)\lambda_{htj}}
-\mathrm{d} \lambda_{htj} \nonumber \\
-&\propto
-p\left(\mathcal{T}^{(\lambda_j)}_{h}\right)
-\prod_{t \in \mathcal{L}^{(\lambda_j)}_{h}}
-\frac{d_0^{c_0}}{\Gamma(c_0)}
-\frac{\Gamma(r_{htj} + c_0)}{(s_{htj} + d_0)^{r_{htj}+c_0}}
-\end{align}$$
-where $r_{htj}=\sum_{i\colon\mathbf{x}_i \in \mathcal{A}^{(\lambda_j)}_{ht}} z_{ij}y_{ij}$,
-and $s_{htj}=\sum_{i\colon\mathbf{x}_i \in \mathcal{A}^{(\lambda_j)}_{ht}}\phi_i z_{ij} e^{u_{ij}} f^{(j)}_{(h)}(\mathbf{x}_i)$.
-From similar calculations it follows that the full conditional of the leaf nodes parameters $\Lambda^{(\lambda_j)}_{(h)}$, are
-$$\left(\lambda_{thj} \mid 
-\mathcal{T}^{(\lambda_j)}_{h},  \mathcal{T}^{(\lambda_j)}_{(h)}, \Lambda^{(\lambda_j)}_{(h)}, \mathbf{y}, \mathbf{z}, \pmb{\phi}
-\right)
-\overset{\operatorname{ind.}}{\sim}\operatorname{Gamma}\lbrack r_{htj} + c_0,s_{htj} + d_0\rbrack,
-\quad t \in  \mathcal{L}^{(\lambda_j)}_{h}.$$
-
----
-# MCMC inference: Bayesian backfitting for $f_0^{(j)}$
-
-- We use the `r Citet(bib, "Albert1993")` data augmentation on the $z_{ij}$.
-
-- Let $\left\{w_{ij}\colon i \in \{1,\ldots, n\}, j\in\{1,\ldots,d\}\right\}$, where 
-$w_{ij} \sim \operatorname{TN}_{\lbrack -\infty, 0 \rbrack}\left\lbrack f_0^{(j)}(\mathbf{x}_i), 1 \right\rbrack$
-when $z_{ij}=1$, and $\operatorname{TN}_{\lbrack 0, \infty\rbrack}\left\lbrack f_0^{(j)}(\mathbf{x}_i), 1 \right\rbrack$
-when $z_{ij}=0$.
-
-- The Bayesian backfitting algorithm of `r Citet(bib, "Chipman2010")` treat the new
-latent variables $w_{ij}$'s as the responses.
-
-- Let $r^{(h)}_{ij} = w_{ij} - \sum_{\ell \neq h}g(\mathbf{x}_i; \mathcal{T}^{(\zeta_j)}_\ell, \mathcal{M}^{(\zeta_j)}_\ell)$
-be the partial residuals. Then,
-$\left(\mathcal{T}^{(\zeta_j)}_{(h)}, \mathcal{M}^{(\zeta_j)}_{(h)}\right)$ depends on the data through 
-the vector of partial residuals $\mathbf{r}^{(h)}_j=(r^{(h)}_{1j}, \ldots, r^{(h)}_{nj})$, where
-$r^{(h)}_{ij} \sim \operatorname{Normal}\left\lbrack g(\mathbf{x}_i; \mathcal{T}^{(\zeta_j)}_h), 1\right\rbrack$.
-
-- Assume the usual the prior for the leaf nodes parameters
-$\mu_{htj} \overset{\operatorname{ind.}}{\sim} \operatorname{Normal}\lbrack 0, \sigma^2_\mu\rbrack$,
-the integrated likelihood and the full conditional distribution of leaf nodes parameters
-are
-
----
-# MCMC inference: Sampling the random effects of ZANIM-LN-BART
-
-- The full conditional distribution of $\mathbf{u}_i$ is given by
-$$p(\mathbf{u}_i \mid \mathbf{y}_i, \mathbf{z}_i, \pmb{f}) \propto
-\prod_{j=1}^d 
-\left(\frac{e^{u_{ij}}}{\sum_{k=1}^dz_{ik}f^{(k)}(\mathbf{x}_i)e^{u_{ik}}}\right)^{y_{ij}}p(\mathbf{u}_i; \pmb{\Sigma}_U).$$
-- We sample from the full conditional using the elliptical slice sampling.
-
-- Recall our constraint $\mathbf{u}_i=\mathbf{B}\mathbf{v}_i$.
-We then place a factor analysis hyper-prior on the underlying latent variables
-$\mathbf{v}_i$:
-$$\mathbf{v}_i = \pmb{\Gamma} \pmb{\eta}_i + \pmb{\epsilon}_i$$
-where $\pmb{\Gamma} = \left\lbrack \gamma_{hj}\right\rbrack_{h=1,\ldots,d-1}^{j=1,\ldots,k}$ is a
-$d-1 \times k$ factor loading matrix, 
-$\pmb{\eta}_i \sim \operatorname{Normal}_k\lbrack \mathbf{0}_k, \mathbf{I}_k\rbrack$ and
-$\pmb{\epsilon}_i \sim \operatorname{Normal}_{d-1}\left\lbrack\mathbf{0}_{d-1}, \pmb{\Psi}\right\rbrack$, with
-$\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}$.
-
-- The variance of $\mathbf{v}_i$ is decomposed as $\pmb{\Sigma}_V = \pmb{\Gamma} \pmb{\Gamma}^\top + \pmb{\Psi}$.
-
-- Full conditional Gaussian updates are readily available for 
-$\pmb{\Gamma}$, $\pmb{\Psi}$, and $\pmb{\eta}_i$.
-
+]
 
 ---
 # MCMC algorithm
@@ -469,6 +444,134 @@ $\pmb{\Gamma}$, $\pmb{\Psi}$, and $\pmb{\eta}_i$.
 knitr::include_graphics(path = "./figures/mcmc_algorithm.png")
 ```
 
+---
+# Simulated example
+
+- Settings: $d = 4$, $n = 400$, $x_i \in \lbrack -1, 1\rbrack$,
+$N_i \sim \operatorname{Uniform}\lbrack 100, 500\rbrack$. Count simulated as follows
+
+$$\mathbf{Y}_i \sim \operatorname{Multinomial}\left\lbrack N_i, 
+\frac{z_{i1}\theta_{i1}}{\sum_{k=1}^4z_{ik}\theta_{ik}}, \ldots, \frac{z_{i4}\theta_{i4}}{\sum_{k=1}^4z_{ik}\theta_{ik}} \right\rbrack, \quad i\in\{1,\ldots,400\}$$
+where $z_{ij} \sim \operatorname{Bernoulli}\lbrack 1 - \zeta_{ij}\rbrack$.
+
+- Functional form of the parameters are given by
+$$\theta_{ij} = \frac{f^{(j)}(x_i)}{\sum_{k=1}^d f^{(k)}(x_i)},
+\quad \textrm{with} \quad
+\log f^{(j)}(x_i) = \sum_{\ell=1}^{b_\lambda} s^{\lambda}_{j\ell}(x_i) \beta_{j\ell},
+\quad \textrm{and} \quad
+\zeta_{ij} = \Phi\left( \sin(2 \pi x_i) + x_i^2 - \beta^{(\zeta_j)}_{0} \right)$$
+where $s^{\lambda}_{j\ell}(\cdot)$
+is basis of cubic B-splines with six degrees,
+$\beta_{j\ell}$ were sampled from a standard normal distribution, and
+$\beta^{(\zeta_j)}_{0} = (0.5, 1.0, 1.5, 2.0)$.
+
+- We compared ZANIM-BART against multinomial-BART model of `r Citet(bib, "Murray2021")`,
+and ZANIDM linear regression model of `r Citet(bib, "Koslovsky2021")`.
+
+---
+# Simulated example
+```{r toy-example}
+n_sample <- 400L
+n_trials <- sample(seq.int(100L, 500L), n_sample, replace = TRUE)
+set.seed(1212)
+d <- 4L
+dof_bs_theta <- 6L
+X <- as.matrix(seq(-1, 1, length.out = n_sample))
+X1_bs <- splines::bs(X, dof_bs_theta)
+betas_theta <- matrix(stats::rnorm(d * dof_bs_theta), dof_bs_theta, d)
+betas_theta[1L, ] <- betas_theta[1L, ] - seq(from = 4, to = 0, length.out = d)
+eta_theta <- X1_bs %*% betas_theta
+eta_zeta <- matrix(nrow = n_sample, ncol = d)
+intercept <- c(0.5, 1.0, 1.5, 2.0)
+for (j in seq_len(d)) {
+  eta_zeta[, j] <- sin(2 * pi * X[, 1L]) + X[, 1L]^2 - intercept[j]
+}
+true_zetas <- pnorm(eta_zeta)
+alphas <- exp(eta_theta) 
+Y <- Z <- true_thetas <- true_varthetas <- matrix(nrow = n_sample, ncol = d)
+for (i in seq_len(n_sample)) {
+  z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - true_zetas[i, ])
+  is_zero <- z == 0L
+  p_ij <- alphas[i, ] / sum(alphas[i, ])
+  true_thetas[i, ] <- p_ij
+  true_varthetas[i, ] <- z * p_ij / sum(z * p_ij)
+  if (all(is_zero)) Y[i, ] <- rep(0L, d)
+  else if (sum(is_zero) == d - 1L) {
+    Y[i, ] <- rep(0L, d)
+    Y[i, !is_zero] <- n_trials[i]
+  } else {
+    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i],
+                               prob = true_varthetas[i, ])
+  }
+  Z[i, ] <- z
+}
+data_sim <- data.frame(id = rep(seq_len(n_sample), each = d),
+                      category = rep(seq_len(d), times = n_sample),
+                      x = rep(X[, 1L], each = d),
+                      theta = c(t(true_thetas)),
+                      zeta = c(t(true_zetas)),
+                      total = c(t(Y)), z = c(t(Z)),
+                      prop = c(apply(Y, 1L, function(z) z/sum(z))))
+data_sim$category_lab <- paste0("j == ", data_sim$category)
+data_sim$prop[which(is.na(data_sim$prop))] <- 0.0
+ggplot(data_sim, aes(x = x, y = prop)) +
+  facet_wrap(~category_lab, labeller = label_parsed) +
+  geom_point(alpha = 0.5, aes(col = "y")) +
+  geom_line(aes(y = theta, col = "theta")) +
+  geom_line(aes(y = zeta, col = "zeta")) +
+  labs(y = latex2exp::TeX(r'(Composition, $y_{ij}/N_i$)'),
+       x = expression(x[i]), col = "", fill = "") +
+  scale_color_manual(
+    breaks = c("y", "theta", "zeta"),
+    values = c("y" = "black", "theta" = "blue", "zeta" = "red"),
+    labels = c("y" = latex2exp::TeX(r'($y_{ij}/N_i$)'),
+               "theta"  = latex2exp::TeX(r'($\theta_{ij}$)'),
+               "zeta"   = latex2exp::TeX(r'($\zeta_{ij}$)')))
+# Import data with the results
+tmp <- readRDS(file = "./data/posterior_parameters.rds")
+data_theta <- tmp[[1L]]
+data_zeta <- tmp[[2L]]
+COLORS <- colorspace::qualitative_hcl(3, palette = "Dark 3")
+```
+
+
+---
+# Estimation of the *population-level* count probabilities
+
+```{r count-prob}
+ggplot(data = data_sim) +
+  geom_line(mapping = aes(x = x, y = theta), linewidth = 0.8) +
+  facet_wrap(~category_lab, labeller = label_parsed) +
+  geom_rug(data = dplyr::filter(data_sim, total == 0L),
+           mapping = aes(y = NA_real_, x = x)) +
+  geom_line(data = data_theta, mapping = aes(x = x, y = median, col = model)) +
+  geom_ribbon(data = data_theta,
+              aes(x = x, ymin = ci_lower, ymax = ci_upper, fill = model),
+              alpha = 0.3) +
+  labs(y = latex2exp::TeX(r'(Count probabilities, $\theta_{ij}$)'),
+       x = expression(x[i]), col = "", fill = "") +
+  scale_color_manual(values = COLORS) +
+  scale_fill_manual(values = COLORS) 
+```
+
+
+---
+# Estimation of the *population-level* structural zero probabilities
+
+```{r zero-prob}
+ggplot(data = data_sim) +
+  geom_line(mapping = aes(x = x, y = zeta), linewidth = 0.8) +
+  facet_wrap(~category_lab, labeller = label_parsed) +
+  geom_rug(data = dplyr::filter(data_sim, total == 0L),
+           mapping = aes(y = NA_real_, x = x)) +
+  geom_line(data = data_zeta, mapping = aes(x = x, y = median, col = model)) +
+  geom_ribbon(data = data_zeta, aes(x = x, ymin = ci_lower, ymax = ci_upper,
+                                    fill = model), alpha = 0.3) +
+  labs(y = latex2exp::TeX(r'(Zero-inflation probabilities, $\zeta_{ij}$)'),
+       x = expression(x[i]), col = "", fill = "") +
+  scale_color_manual(values = COLORS[-1]) +
+  scale_fill_manual(values = COLORS[-1]) 
+```
 
 
 ---
@@ -478,30 +581,126 @@ class: middle, inverse
 
 
 ---
+# Context
+
+- $n=7832$ samples of $d=28$ pollen species collected at different site locations in the 
+Northern Hemisphere, along with three climate covariates `r Citep(bib, "Parnell2015")`: 
+  - growing degree days above five $^\circ$ (GDD5): growing season warmth.
+  - mean temperature of the coldest month (MTCO): harshness of the winter.
+  - ratio of actual to potential evapotranspiration (AET/PET): available moisture.
+
+- **Goal:** to investigate the climate-pollen relationship in a sparse (63% zeros) and highly heterogeneous dataset.
+
+```{r plot-pollen-again, echo = FALSE, out.width="80%", eval=FALSE}
+data_pollen |>
+  dplyr::filter(specie %in% c("Pinus.D", "Picea")) |>
+  ggplot(aes(x = mtco, y = prop)) +
+  facet_wrap(~specie) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_rug(data = dplyr::filter(data_pollen, specie %in% c("Pinus.D", "Picea"),
+                                total == 0),
+           aes(y = NA_real_), col = "red", alpha = 0.5) +
+  labs(y = "Pollen composition", x = "Mean temperature of coldest month (MTCO)")
+```
+
+- $m_\lambda = m_\zeta = 100$ trees for $j\in\{1,\ldots, 28\}$. It took $3$ hours for $10,000$ iterations.
+
+---
+# Goodness-of-fit
+
+```{r gof-pollen, out.width="80%"}
+knitr::include_graphics("./figures/ppc_ecdf_paleoclimate_example.png")
+```
+
+
+---
+# Posterior dependence plots: MTCO
+
+```{r pdps}
+data_pdp_theta <- readRDS("./data/pdp_theta_picea_pinusd.rds")
+data_pdp_zeta <- readRDS("./data/pdp_zeta_picea_pinusd.rds")
+chosen_covariates <- c("mtco", "gdd5", "aet.pet")
+chosen_taxa <- c("Pinus.D", "Picea")
+data_pollen <- dplyr::rename(data_pollen, taxa = specie)
+list_plots <- list()
+for (k in seq_along(chosen_covariates)) {
+  cur_x <- chosen_covariates[k]
+  data_cur <- dplyr::filter(data_pdp_theta, covariate == cur_x)
+  data_cur_zeta <- dplyr::filter(data_pdp_zeta, covariate == cur_x)
+  list_plots[[k]] <- ggplot(dplyr::filter(data_pollen, taxa %in% chosen_taxa)) +
+    facet_wrap(~taxa, ncol = 2) +
+    geom_point(data = dplyr::filter(data_pollen, taxa %in% chosen_taxa),
+               aes(x = !!sym(cur_x), y = prop),
+               alpha = 0.2, size = 0.5) +
+    geom_rug(data = dplyr::filter(data_pollen, taxa %in% chosen_taxa, total == 0),
+             aes(x = !!sym(cur_x), y = NA_real_)) +
+    geom_line(data = data_cur, aes(x = x, y = median), col = "dodgerblue") +
+    geom_ribbon(data = data_cur, aes(x = x, ymin = ci_lower, ymax = ci_upper),
+                fill = "dodgerblue", alpha = 0.4) +
+    geom_line(data = data_cur_zeta, aes(x = x, y = median), col = "orange") +
+    geom_ribbon(data = data_cur_zeta, aes(x = x, ymin = ci_lower, ymax = ci_upper),
+                fill = "orange", alpha = 0.4) +
+    labs(y = "Pollen composition", x = toupper(cur_x))
+}
+list_plots[[1L]]
+```
+
+---
+# Posterior dependence plots: GDD5
+```{r pdp-gdd5}
+list_plots[[2L]]
+```
+
+---
+# Posterior dependence plots: AET/PET
+```{r pdp-aet-pet}
+list_plots[[3L]]
+```
+
+
+
+---
+# Estimated climate surface: Pinus.D
+
+```{r gdd5-mtco-pinus-d, out.width="100%"}
+knitr::include_graphics("./figures/predictions_gdd5_mtco_pinus.d.png")
+```
+
+---
+# Estimated climate surface: Picea
+
+```{r gdd5-mtco-picea, out.width="100%"}
+knitr::include_graphics("./figures/predictions_gdd5_mtco_picea.png")
+```
+
+
+---
 # Final remarks
 
 **Summary**
 
-  - We introduced and characterised two parametric families of distributions to model
-  zero-inflation in count-compositional data through a mixture approach.
+
+  - Probability characterisation for zero-inflation in count-composition data `r Citep(bib, "Menezes2025")`.
+
+  - ZANIM-BART and ZANIM-LN-BART models address key challenges in 
+count-compositional data: zero-inflation, overdispersion, cross-sample heterogeneity, 
+unknown covariates effects.
+
+  - Develop MCMC algorithm for ZANIM-BART and ZANIM-LN-BART models combining
+  ZANIM data augmentation `r Citep(bib, "Menezes2025")` established BART sampling routines.
   
-  - We incorporated covariates in ZANIM's parameters through a non-parametric
-  additive regression trees approach.
+  - Illustrate the useful of our models in the analysis of modern pollen-climate data.
 
 --
 
 **Future work**
-
-  - Extend ZANIDM to also allow parameters to depend on covariates through non-parametric additive
-  regression trees.
   
-  - Consider other component distributions suitable for modelling count-compositional
-  data, e.g., the Conway-Maxwell-multinomial distribution `r Cite(bib, c("Kadane2018", "Morris2020"))`.
+  - Integrate our proposed models into the paleoclimate reconstruction framework of `r Citet(bib, "Parnell2015")`.
   
-  - Integrate the proposed models into the paleoclimate reconstruction framework 
-based on pollen data `r Citep(bib, "Parnell2015")`.
+  - Relax independence across $\mathbf{z}_i$ using the
+  probit seemingly unrelated BART (probit-suBART) prior of `r Citet(bib, "Esser2025")`.
 
-
+  <!-- - Incorporate the multiplicative gamma process prior of `r Citet(bib, "Bhattacharya2011")` in ZANIM-LN-BART model. -->
 
 ---
 count: false
@@ -509,7 +708,17 @@ count: false
 
 .font60[
 ```{r bib, results='asis', echo=FALSE}
-RefManageR::PrintBibliography(bib, start = 1, end = 12)
+RefManageR::PrintBibliography(bib, start = 1, end = 11)
+```
+]
+
+---
+count: false
+# References
+
+.font60[
+```{r bib2, results='asis', echo=FALSE}
+RefManageR::PrintBibliography(bib, start = 12, end = 19)
 ```
 ]
 
@@ -520,7 +729,7 @@ count: false
 class: middle, inverse
 # Thank you!
 
-.pull-down[
+.pull-right[
 
 <a href="mailto:andrefelipemaringa@gmail.com">
 `r icons::fontawesome("paper-plane")` andrefelipemaringa@gmail.com
@@ -536,3 +745,4 @@ class: middle, inverse
 
 <br><br><br><br><br>
 ]
+

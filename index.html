@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Bayesian nonparametric models for sparse count-compositional data using ensembles of regression trees</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="André F. B. Menezes – MU" />
+    <meta name="author" content="Prof. Andrew Parnell – UCD" />
+    <meta name="author" content="Dr. Keefe Murphy – MU" />
+    <script src="index_files/header-attrs-2.29/header-attrs.js"></script>
+    <link href="index_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="config/sydney.css" type="text/css" />
+    <link rel="stylesheet" href="config/sydney-fonts.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Bayesian nonparametric models for sparse count-compositional data using ensembles of regression trees
+]
+.author[
+### <strong>André F. B. Menezes<strong> – MU
+]
+.author[
+### Prof. Andrew Parnell – UCD
+]
+.author[
+### Dr. Keefe Murphy – MU
+]
+.date[
+### Working Group on Statistical Learning, UCD, November 20, 2025
+]
+
+---
+
+
+
+
+# Outline
+
+- Introduction
+
+- Zero-inflation in count-compositional data
+&lt;!-- Zero-and-$N$-inflated count-compositional distributions --&gt;
+
+- Bayesian nonparametric models for sparse count-compositional data
+  - The BART prior
+  - The novel Bayesian nonparametric models
+  - Inference
+  - Simulated example
+
+- Modern pollen-climate application
+
+- Conclusions
+
+---
+# What is count-compositional data?
+
+&gt; Multivariate counts constrained by a random or fixed total.
+
+- The data is usually collected in a matrix `\(\mathbf{Y} \in \mathbb{N}^{n\times d}_0\)`,
+with `\(n\)` samples and `\(d\)` categories.
+
+- Each row is a random vector `\(\mathbf{Y}_i = (Y_{i1}, \ldots, Y_{id})\)`
+with non-negative integer values defined in the discrete simplex space:
+`$$\mathbb{S}_N^d = \left\{\mathbf{Y}_i \in \left(0, 1, \ldots, N_i\right)^d; \sum_{j=1}^d Y_{ij}=N_i\right\}.$$`
+
+
+- Examples include:
+  - pollen counts observed in sediments dating from several species.
+  - genomic sequencing data (microbiome, single-cell RNA).
+  - total votes of each candidate for the Irish presidential election.
+
+
+
+---
+## Motivating example
+
+- Modern pollen-climate data: `\(n=7832\)` samples, `\(d=28\)` pollen species, `\(p=3\)` climate covariates, total counts `\(N_i \in \{74, 1003\}\)` &lt;a name=cite-Haslett2006&gt;&lt;/a&gt;&lt;a name=cite-SalterTownshend2012&gt;&lt;/a&gt;&lt;a name=cite-Parnell2015&gt;&lt;/a&gt;([Haslett et al., 2006](#bib-Haslett2006); [Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Parnell et al., 2015](#bib-Parnell2015)).
+
+
+```
+## # A tibble: 7,832 × 31
+##     gdd5  mtco aet.pet Pinus.D Betula Gramineae Picea Quercus.D Alnus Cyperaceae
+##    &lt;int&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;int&gt;  &lt;int&gt;     &lt;int&gt; &lt;int&gt;     &lt;int&gt; &lt;int&gt;      &lt;int&gt;
+##  1  1874  -7.9   0.893     721    158         0     7        22    50          0
+##  2  1623  -5.5   0.941     537     28         0   302        19    38          0
+##  3  1475  -4.7   0.931     136    183         0   110         0   276          0
+##  4  1360  -8.8   0.949     364    354         0   141         0   111          0
+##  5  1295  -6.9   0.993     708     50         0   151         0    91          0
+##  6  1539  -7.8   0.963     673    194         0    82         0    51          0
+##  7  1526  -6.6   0.949     281    280         0    93        47   187          0
+##  8  1553  -8.1   0.962     666    115         0   146         0    73          0
+##  9  1459 -10.9   0.95      420    267         0   143         0    45          0
+## 10  1283  -8.3   0.961     779     90         0   121         0    10          0
+## # ℹ 7,822 more rows
+## # ℹ 21 more variables: Chenopodiaceae &lt;int&gt;, Artemisia &lt;int&gt;, Quercus.E &lt;int&gt;,
+## #   Salix &lt;int&gt;, Juniperus &lt;int&gt;, Ericales &lt;int&gt;, Fagus &lt;int&gt;, Abies &lt;int&gt;,
+## #   Olea &lt;int&gt;, Ulmus &lt;int&gt;, Corylus &lt;int&gt;, Ostrya &lt;int&gt;, Pinus.H &lt;int&gt;,
+## #   Cedrus &lt;int&gt;, Carpinus &lt;int&gt;, Pistacia &lt;int&gt;, Castanea &lt;int&gt;, Larix &lt;int&gt;,
+## #   Tilia &lt;int&gt;, Ephedra &lt;int&gt;, Phillyrea &lt;int&gt;
+```
+
+---
+## Motivating example
+
+&lt;img src="./figures/mapping_location_total_zero.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+## Motivating example
+
+&lt;img src="index_files/figure-html/plot-pollen-1.svg" width="90%" style="display: block; margin: auto;" /&gt;
+
+---
+## Key features of pollen-climate count-compositional data
+
+&lt;!-- - High-dimension: `\(d = 28\)` pollen species. --&gt;
+
+- Sparse: `\(63.21\%\)` of counts are zero.
+  - `\(N\)`-inflated observations:
+
+```
+## # A tibble: 3 × 10
+##      id specie       total  prop  gdd5  mtco aet.pet longitude latitude altitude
+##   &lt;int&gt; &lt;fct&gt;        &lt;int&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;int&gt;
+## 1  1558 Chenopodiac…  1000     1  2436  -9.7   0.429      46.8     49.4       20
+## 2  6368 Pinus.D       1000     1    52 -32.9   0.794     -89.8     68.5       90
+## 3  6369 Cyperaceae    1000     1    40 -32.6   0.805     -88.2     68.3      100
+```
+
+- Heterogeneity: complex cross-sample variation, `\(\operatorname{DI}(Y_j)=\operatorname{Var}(Y_j)/\mathbb{E}(Y_j)\)` ranging from `\(41.15\)` (_Ostrya_) and `\(470.18\)` (_Cedrus_).
+
+- Unknown relationship between the climate variables and the pollen composition.
+  - Gaussian markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space &lt;a name=cite-Sweeney2012&gt;&lt;/a&gt;&lt;a name=cite-Tipton2019&gt;&lt;/a&gt;([Haslett et al., 2006](#bib-Haslett2006); [Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012); [Tipton et al., 2019](#bib-Tipton2019)).
+
+&lt;!-- , and the taxa-specific excess of zeros. --&gt;
+
+
+---
+## Related work
+
+&gt; - **Paleoclimate studies**: break the multinomial into independent univariate 
+components using expert-informed hierarchical category (pollen species) structures.
+([Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012)).
+&gt; - **Microbiome studies**: explicit account for zero-inflation in count-composition data,
+but rely simple linear regression structure:
+&lt;a name=cite-Tang2018&gt;&lt;/a&gt;&lt;a name=cite-Zeng2023&gt;&lt;/a&gt;&lt;a name=cite-Koslovsky2023&gt;&lt;/a&gt;([Tang et al., 2018](#bib-Tang2018); [Zeng et al., 2023](#bib-Zeng2023); [Koslovsky, 2023](#bib-Koslovsky2023)).
+
+--
+
+.font120[Our contributions]
+
+&gt; 1. A unified framework for zero-inflation in count-compositional data &lt;a name=cite-Menezes2025&gt;&lt;/a&gt;([Menezes et al., 2025](#bib-Menezes2025)).
+&gt; 2. Bayesian nonparametric models that jointly address zero-inflation, overdispersion, unobserved latent effects, and complex covariate relationships.
+
+---
+count: false
+class: middle, inverse
+# Zero-inflation in count-compositional data
+
+---
+# Zero-inflation in count-compositional data
+
+- Zeros may have different meanings &lt;a name=cite-BlascoMoreno2019&gt;&lt;/a&gt;([Blasco-Moreno et al., 2019](#bib-BlascoMoreno2019)):
+  - Sampling zeros: due to sampling variability.
+  - Structural zeros: related to constraints on experimental conditions (data collection). 
+
+- The common probability distributions (multinomial and Dirichlet-multinomial)
+for count-compositional can not handle excess of zeros.
+
+- Excess zeros can occur in a single category or across multiple categories.
+  
+  - In `\(d = 5\)` and `\(N = 12\)`: `\(\mathbf{Y}_i = (2, 3, 0, 4, 3)\)`, `\(\mathbf{Y}_i = (9, 3, 0, 0, 0)\)` or
+`\(\mathbf{Y}_i = (12, 0, 0, 0, 0)\)`.
+
+  - There are `\(2^d - 1\)` different settings where zeros can occur in the random vector `\(\mathbf{Y}_i \in \mathbb{S}^d_{N_i}\)`.
+
+  - In extreme cases where zeros co-occur in all but one category, the count for the
+remaining category will coincide with the number of trials, `\(N_i\)`.
+
+---
+# The zero-and-N-inflated multinomial distribution
+
+- `\(\mathbf{Y}_i \sim \operatorname{Multinomial}\left\lbrack N_i, \boldsymbol{\theta}\right\rbrack\)`,
+where 
+`\(\boldsymbol{\theta} = (\theta_1, \ldots, \theta_d)\)` is the *population-level* count
+probabilities defined on the continuous simplex
+`\(\{\pmb{\theta}\in\mathbb{R}^d; \theta_j &gt; 0, \sum_{j=1}^d \theta_j=1\}\)`.
+
+--
+- Reparameterise `\(\theta_j=\lambda_j/\sum_{k=1}^d \lambda_k\)` and introduce the latent 
+variable `\((\phi_i \mid \boldsymbol{\lambda}, \mathbf{y}_i) \sim \operatorname{Gamma}\lbrack N_i, \sum_{j=1}^d\lambda_j\rbrack\)`,
+such that the joint density of `\(\mathbf{Y}_i\)` and `\(\phi_i\)` is &lt;a name=cite-Baker1994&gt;&lt;/a&gt;([Baker, 1994](#bib-Baker1994)):
+`$$p(\mathbf{y}_i,\phi_i;\boldsymbol{\lambda})=\dfrac{N_i!\phi_i^{N_i-1}}{\Gamma(N_i)}\prod_{j=1}^d\left\lbrack\dfrac{\lambda_j^{y_{ij}}e^{-\lambda_j\phi_i}}{y_{ij}!}\right\rbrack.$$`
+
+--
+- We extend this to a zero-inflated Poisson form with a vector
+`\(\boldsymbol{\zeta} = (\zeta_1, \ldots, \zeta_d)\)` of 
+*population-level* structural zero probabilities
+for each category, such that `\(\zeta_j \in \lbrack 0, 1 \rbrack\)`, i.e.
+`$$p(\mathbf{y}_i,\phi; \boldsymbol{\lambda}, \boldsymbol{\zeta}) =
+\dfrac{N_i!\,\phi^{N_i - 1}}{\Gamma(N_i)}\,\prod_{j=1}^d \left\lbrack
+\zeta_j\,I_0(y_{ij}) + (1 - \zeta_j)\,\dfrac{\lambda_j^{y_{ij}}\,e^{-\lambda_j\,\phi_i}}{y_{ij}!}
+\right\rbrack$$`
+and then integrate out `\(\phi_i\)` to obtain the zero-and-_N_-inflated multinomial (ZANIM) distribution.
+
+---
+# ZANIM finite mixture representation
+
+`$$\begin{align}\Pr\lbrack
+\mathbf{Y}_i = \mathbf{y}_i; \pmb{\theta}, \pmb{\zeta}\rbrack &amp;= \eta_d\,\binom{N}{y_{i1} \dots y_{id}}\,
+\prod_{j=1}^d
+\theta_j^{y_{ij}} \leftarrow \fbox{Multinomial component}\\
+\fbox{All-inflation component}\rightarrow  &amp;\phantom{=}~+\eta_0\,\prod_{j=1}^{d}\,I_0(y_{ij})\\
+\fbox{N-inflation components}\rightarrow &amp;\phantom{=}~+
+\sum_{j=1}^{d}\,
+\eta_{N}^{(j)}
+\left\lbrack 
+I_0\left(\sum_{k\colon k \neq j} y_{ik} \right)\,
+\right\rbrack \\
+\fbox{Reduced multinomials components}\rightarrow 
+&amp;\phantom{=}~+
+\sum_{\mathcal{K} \in \mathfrak{K}} 
+\eta_{\mathcal{K}}
+\left\lbrack
+I_0\left(\sum_{k \in \mathcal{K}} y_{ik}\right) 
+\binom{N}{\{y_{ij}\}_{j \notin \mathcal{K}}} 
+\prod_{j \notin \mathcal{K}} \left( \theta_j^{\mathcal{K}} \right)^{y_{ij}}
+\right\rbrack  
+\end{align}$$`
+for `\(\mathbf{y}_i \in \mathbb{S}^d_{N_i} \cup \mathbf{0}_d\)`,
+where
+`\(\theta_j^{\mathcal{K}} = \dfrac{\theta_j}{1 - \sum_{\ell \in \mathcal{K}}\,\theta_{\ell}}\)`,
+and 
+`\(\mathfrak{K} = \{\mathcal{K} \subseteq \{1,\ldots,d\}; 1 \leq \lvert\mathcal{K}\rvert \leq d-2\}\)`.
+
+--
+&gt; We do not need to evaluate ALL `\(2^d\)` mixture components and there are only 
+`\(2d\)` parameters, as the mixture weights `\(\boldsymbol{\eta}\)` are simple functions of
+the `\(\boldsymbol{\zeta}\)` parameters.
+
+---
+## Stochastic representation
+
+If `\(\mathbf{Y}_i \sim \operatorname{ZANIM}_d\lbrack N_i, \boldsymbol{\theta}, \boldsymbol{\zeta} \rbrack\)`,
+then `\(\mathbf{Y}\)` has the stochastic representation:
+`$$\begin{align*}
+(z_{ij} \mid \zeta_{j}) &amp; \overset{\operatorname{ind.}}{\sim} \operatorname{Bernoulli}\lbrack 1 - \zeta_j \rbrack, \quad j=1,\ldots, d\\
+(\mathbf{Y}_i \mid N_i, \boldsymbol{\theta}, \boldsymbol{z}_i) &amp;\sim
+\begin{cases} \delta_{\mathbf{0}_d}(\cdot) &amp; \textrm{if} \: z_{ij} = 0 \: \forall j\\
+\operatorname{Multinomial}_d\left\lbrack N, \dfrac{z_{i1}\theta_1}{\sum_{k=1}^dz_{ik}\theta_k}, \ldots, \dfrac{z_{id}\theta_d}{\sum_{k=1}^dz_{ik}\theta_k}\right\rbrack
+&amp; \textrm{otherwise}.
+\end{cases}
+\end{align*}$$`
+
+&gt; We refer to `$$\vartheta_{ij} = \frac{z_{ij}\theta_j}{\sum_{k=1}^d z_{ik}\theta_k}$$`
+as the *individual-level* count probabilities, for `\(i\in\{1,\ldots,n\}\)` and `\(j\in\{1,\ldots,d\}\)`.
+
+--
+
+&gt; We show that the zero-and-_N_-inflated Dirichlet-multinomial (ZANIDM) distribution
+intoduced by [Koslovsky (2023)](#bib-Koslovsky2023)
+also admits a finite mixture representation and we derive moments, marginals, and fully conjugate Bayesian inference schemes for both distributions.
+
+---
+# [Menezes, Parnell, and Murphy (2025)]()
+
+&lt;img src="./figures/paper_jmva.png" width="50%" style="display: block; margin: auto;" /&gt;
+
+&gt; Menezes, A.F., Parnell, A.C., Murphy, K., 2025.
+Finite mixture representations of zero-and-_N_-inflated distributions for count-compositional data. Journal of Multivariate Analysis 210, 105492. doi:10.1016/j.jmva.6342025.105492.
+
+---
+count: false
+class: middle, inverse
+# The Bayesian nonparametric models
+
+---
+# The Bayesian additive regression trees (BART) prior
+
+.font75[
+
+- BART is Bayesian nonparametric prior that represents 
+an unknown function `\(f(\mathbf{x}_i)\)` of interest as a sum of decision trees &lt;a name=cite-Chipman2010&gt;&lt;/a&gt;([Chipman et al., 2010](#bib-Chipman2010))
+`$$f(\mathbf{x}_i) = \sum_{h=1}^{m}g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h),$$`
+where `\(g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h)\)` denotes a binary decision
+tree parametrised by
+  - `\(\mathcal{T}_h\)`: binary tree topology leaf and branch nodes denoted by `\(\mathcal{L}_h\)` and `\(\mathcal{B}_h\)`, respectively.
+  - Each branch node `\(b\in \mathcal{B}_h\)` there is a spitting rule of the form
+`\(\lbrack x_{j_{b}} \leq c_b\rbrack\)`.
+  - `\(\mathcal{M}_h = \{\mu_{ht}\colon t \in \mathcal{L}_h\}\)` are leaf node parameters with `\(\mu_{ht} \in \mathbb{R}\)`.
+
+- The prior is `\(\pi(\mathcal{T}_h, \mathcal{M}_h) = \pi_\mathcal{T}(\mathcal{T}_h)\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)\)`.
+  - `\(\pi_\mathcal{T}(\mathcal{T}_h)\)` is a branching process &lt;a name=cite-Chipman1998&gt;&lt;/a&gt;([Chipman et al., 1998](#bib-Chipman1998))
+  - `\(\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)=\prod_{t \in \mathcal{L}_h} \pi_\mu(\mu_{ht})\)`,
+where `\(\pi_\mu\)` is chosen so that it is conditionally conjugate.
+
+- Inference on the BART parameters `\(\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m\)`
+is performed by MCMC methods using Bayesian backfitting &lt;a name=cite-Hastie2000&gt;&lt;/a&gt;([Hastie et al., 2000](#bib-Hastie2000)).
+
+- Theoretical guard
+  - Gaussian process limit as `\(m \rightarrow \infty\)` &lt;a name=cite-Linero2017&gt;&lt;/a&gt;([Linero, 2017](#bib-Linero2017)).
+  - Good rates of posterior convergence &lt;a name=cite-Linero2018&gt;&lt;/a&gt;&lt;a name=cite-Rockova2020&gt;&lt;/a&gt;([Linero, 2018](#bib-Linero2018); [Ročková et al., 2020](#bib-Rockova2020)).
+
+]
+
+---
+# The BART prior
+
+&lt;img src="./figures/trees_from_mmm.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+
+---
+# The ZANIM-BART model
+
+- *population-level* count probabilities, `\(\pmb{\theta}\)` &lt;a name=cite-Murray2021&gt;&lt;/a&gt;([Murray, 2021](#bib-Murray2021)):
+
+`$$\theta_{ij} = \frac{f^{(j)}(\mathbf{x}_i)}{\sum_{k=1}^d f^{(k)}(\mathbf{x}_i)},
+\quad \textrm{with} \quad
+\log f^{(j)}(\mathbf{x}_i) =
+\sum_{h=1}^{m_\lambda}\,\log\left\lbrack g\left(\mathbf{x}_i; \mathcal{T}^{(\lambda_j)}_{h},
+\Lambda^{(\lambda_j)}_{h}\right)\right\rbrack, \quad j \in \{1, \ldots, d\},$$`
+where `\(\mathcal{T}^{(\lambda_j)}_{h}\)` denotes the `\(h\)`-th binary tree topology
+for the category `\(j\)` and 
+`\(\Lambda^{(\lambda_j)}_{h} = \{\lambda_{htj}\colon \mathcal{L}^{(\lambda_j)}_h\}\)` 
+the corresponding set of leaf nodes parameters with `\(\lambda_{htj}&gt;0\)`.
+
+--
+
+- *population-level*  structural zero probabilities, `\(\pmb{\zeta}\)` ([Chipman et al., 2010](#bib-Chipman2010)):
+
+`$$\zeta_{ij} = \Phi\left( f^{(j)}_0(\mathbf{x}_i) \right)
+= \Phi\left\lbrack \sum_{h=1}^{m_\zeta} 
+g\left(\mathbf{x}_i; \mathcal{T}^{(\zeta_j)}_{h}, \mathcal{M}^{(\zeta_j)}_{h}\right)
+\right\rbrack, \quad j\in \{1,\ldots,d\}$$`
+where `\(\Phi(\cdot)\)` is cumulative distribution function of standard normal random variable,
+and `\(\mathcal{T}^{(\zeta_j)}_{h}\)` and `\(\mathcal{M}^{(\zeta_j)}_{h} = \{\mu_{htj}\colon \mathcal{L}^{(\zeta_j)}_h \}\)`
+are the category-specific tree structure and leaf nodes parameters, respectively.
+
+
+---
+# Incoporating heterogeneity: The ZANIM-LN-BART model
+
+- Include a multivariate Gaussian random effect,
+`\(\mathbf{u}_i = (u_{i1}, \ldots, u_{id}) \sim \operatorname{Normal}_d\left\lbrack \pmb{0}, \pmb{\Sigma}_U \right\rbrack\)`,
+on the *population-level* count probabilities,
+`\(\pmb{\theta}\)`, as follows:
+`$$\theta_{ij} = \frac{f^{(j)}(\mathbf{x}_i) e^{u_{ij}}}{\sum_{k=1}^d f^{(j)}(\mathbf{x}_i) e^{u_{ik}}}, \quad
+j\in\{1,\ldots,d\}.$$`
+
+--
+
+- Identifiability is achieved through a sum-to-zero constraint:
+  - `\(\mathbf{u}_i=\mathbf{B}\mathbf{v}_i\)`, `\(\mathbf{v}_i \sim \operatorname{Normal}_{d-1}\left\lbrack \pmb{0}, \pmb{\Sigma}_V \right\rbrack\)`, where `\(\mathbf{B}\)` is `\(d\times d-1\)` orthogonal matrix, and `\(\pmb{\Sigma}_U = \mathbf{B} \pmb{\Sigma}_V \mathbf{B}^\top\)`.
+  - Sample from `\(\mathbf{v}_i\)` using elliptical slice sampling
+  - Factor analysis hyper-prior on `\(\pmb{\Sigma}_V\)`.
+
+`$$\mathbf{v}_i = \pmb{\Gamma} \pmb{\eta}_i + \pmb{\epsilon}_i,$$`
+where `\(\pmb{\Gamma} = \left\lbrack \gamma_{hj}\right\rbrack_{h=1,\ldots,d-1}^{j=1,\ldots,k}\)` is a
+`\(d-1 \times k\)` factor loading matrix, 
+`\(\pmb{\eta}_i \sim \operatorname{Normal}_k\lbrack \mathbf{0}_k, \mathbf{I}_k\rbrack\)` and
+`\(\pmb{\epsilon}_i \sim \operatorname{Normal}_{d-1}\left\lbrack\mathbf{0}_{d-1}, \pmb{\Psi}\right\rbrack\)`, with
+`\(\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}\)`.
+
+&lt;!-- - Full conditional Gaussian updates are readily available for  --&gt;
+&lt;!-- `\(\pmb{\Gamma}\)`, `\(\pmb{\Psi}\)`, and `\(\pmb{\eta}_i\)`. --&gt;
+
+&lt;!-- - The variance of `\(\mathbf{v}_i\)` is decomposed as `\(\pmb{\Sigma}_V = \pmb{\Gamma} \pmb{\Gamma}^\top + \pmb{\Psi}\)`. --&gt;
+
+
+&lt;!-- - Similar formulation is proposed by Zeng et al. (2023) with different identifiability and --&gt;
+&lt;!-- hyper-prior choices. --&gt;
+
+---
+# Data augmentation
+
+.font70[
+
+- Let `\(\pmb{f} = (f^{(1)}, \ldots, f^{(d)})\)` and `\(\pmb{f}_0 = (f_0^{(1)}, \ldots, f_0^{(d)})\)`
+denote the independent BART priors that defined our models.
+
+- Data augmentation scheme of [Menezes et al. (2025)](#bib-Menezes2025):
+`$$(\phi_i \mid \mathbf{y}_i, \mathbf{z}_i, \pmb{f})  \overset{\operatorname{ind.}}{\sim}
+\operatorname{Gamma}\left\lbrack N_i, \sum_{j=1}^d z_{ij}f^{(j)}(\mathbf{x}_i)e^{u_{ij}}\right\rbrack,
+\quad i\in\{1,\ldots,n\}$$`
+where `\(z_{ij}  \overset{\operatorname{ind.}}{\sim} \operatorname{Bernoulli}\left\lbrack 1 - \Phi\left(f^{(j)}_0(\mathbf{x}_i)\right)\right\rbrack\)`. This results in the augmented likelihood:
+`$$p(\pmb{f}, \pmb{f}_0; \mathbf{y}, \mathbf{x}, \mathbf{u}, \mathbf{z}, \pmb{\phi})
+\propto
+\prod_{i=1}^n
+\prod_{j=1}^d
+\left\{
+\left\lbrack \Phi\left(f^{(j)}_0(\mathbf{x}_i)\right)\right\rbrack^{1-z_{ij}}
+\left\lbrack 1 - \Phi\left( f^{(j)}_0(\mathbf{x}_i)\right)\right\rbrack^{1-z_{ij}}
+f^{(j)}(\mathbf{x}_i)^{z_{ij}\,y_{ij}}e^{-\phi_i\,z_{ij}f^{(j)}(\mathbf{x}_i)}
+\right\}
+p(\mathbf{u}_i; \pmb{\Sigma}_U).$$`
+
+- The posterior distribution of `\(z_{ij}\)` is:
+`$$(z_{ij} \mid y_{ij}, \phi_i, \pmb{f}, \pmb{f}_0) \overset{\operatorname{ind.}}{\sim}
+\begin{cases} 1 &amp; \textrm{if} \: y_{ij} &gt; 0\\
+\operatorname{Bernoulli}\left\lbrack
+\dfrac{\left\lbrack1- \Phi\left( f^{(j)}_0(\mathbf{x}_i)\right) \right\rbrack\,e^{-\phi_iu_{ij}f^{(j)}(\mathbf{x}_i)}
+}{\Phi\left( f^{(j)}_0(\mathbf{x}_i)\right) + \left\lbrack 1- \Phi\left( f^{(j)}_0(\mathbf{x}_i)\right) \right\rbrack
+e^{-\phi_i u_{ij}f^{(j)}(\mathbf{x}_i)}}
+\right\rbrack
+&amp; \textrm{if} \: y_{ij} = 0.
+\end{cases}$$`
+]
+
+--
+
+.font70[
+
+- Independent BART updates for each `\(j\in\{1,\ldots,d\}\)`:
+  - `\((\mathcal{T}^{(\lambda_j)}_h, \Lambda_h^{(\lambda_j)})_{h=1}^{m_\lambda}\)` using
+  [Murray (2021)](#bib-Murray2021) **generalised Bayesian backfitting** algorithm;
+  
+  - `\((\mathcal{T}^{(\zeta_j)}_h, \mathcal{M}_h^{(\zeta_j)})_{h=1}^{m_\zeta}\)` using
+  [Chipman et al. (2010)](#bib-Chipman2010) **Bayesian backfitting** algorithm;
+
+]
+
+---
+# MCMC algorithm
+&lt;img src="./figures/mcmc_algorithm.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+# Simulated example
+
+- Settings: `\(d = 4\)`, `\(n = 400\)`, `\(x_i \in \lbrack -1, 1\rbrack\)`,
+`\(N_i \sim \operatorname{Uniform}\lbrack 100, 500\rbrack\)`. Count simulated as follows
+
+`$$\mathbf{Y}_i \sim \operatorname{Multinomial}\left\lbrack N_i, 
+\frac{z_{i1}\theta_{i1}}{\sum_{k=1}^4z_{ik}\theta_{ik}}, \ldots, \frac{z_{i4}\theta_{i4}}{\sum_{k=1}^4z_{ik}\theta_{ik}} \right\rbrack, \quad i\in\{1,\ldots,400\}$$`
+where `\(z_{ij} \sim \operatorname{Bernoulli}\lbrack 1 - \zeta_{ij}\rbrack\)`.
+
+- Functional form of the parameters are given by
+`$$\theta_{ij} = \frac{f^{(j)}(x_i)}{\sum_{k=1}^d f^{(k)}(x_i)},
+\quad \textrm{with} \quad
+\log f^{(j)}(x_i) = \sum_{\ell=1}^{b_\lambda} s^{\lambda}_{j\ell}(x_i) \beta_{j\ell},
+\quad \textrm{and} \quad
+\zeta_{ij} = \Phi\left( \sin(2 \pi x_i) + x_i^2 - \beta^{(\zeta_j)}_{0} \right)$$`
+where `\(s^{\lambda}_{j\ell}(\cdot)\)`
+is basis of cubic B-splines with six degrees,
+`\(\beta_{j\ell}\)` were sampled from a standard normal distribution, and
+`\(\beta^{(\zeta_j)}_{0} = (0.5, 1.0, 1.5, 2.0)\)`.
+
+- We compared ZANIM-BART against multinomial-BART model of [Murray (2021)](#bib-Murray2021),
+and ZANIDM linear regression model of .
+
+---
+# Simulated example
+&lt;img src="index_files/figure-html/toy-example-1.svg" style="display: block; margin: auto;" /&gt;
+
+
+---
+# Estimation of the *population-level* count probabilities
+
+&lt;img src="index_files/figure-html/count-prob-1.svg" style="display: block; margin: auto;" /&gt;
+
+
+---
+# Estimation of the *population-level* structural zero probabilities
+
+&lt;img src="index_files/figure-html/zero-prob-1.svg" style="display: block; margin: auto;" /&gt;
+
+
+---
+count: false
+class: middle, inverse
+# Modern pollen-climate application
+
+
+---
+# Context
+
+- `\(n=7832\)` samples of `\(d=28\)` pollen species collected at different site locations in the 
+Northern Hemisphere, along with three climate covariates ([Parnell et al., 2015](#bib-Parnell2015)): 
+  - growing degree days above five `\(^\circ\)` (GDD5): growing season warmth.
+  - mean temperature of the coldest month (MTCO): harshness of the winter.
+  - ratio of actual to potential evapotranspiration (AET/PET): available moisture.
+
+- **Goal:** to investigate the climate-pollen relationship in a sparse (63% zeros) and highly heterogeneous dataset.
+
+
+
+- `\(m_\lambda = m_\zeta = 100\)` trees for `\(j\in\{1,\ldots, 28\}\)`. It took `\(3\)` hours for `\(10,000\)` iterations.
+
+---
+# Goodness-of-fit
+
+&lt;img src="./figures/ppc_ecdf_paleoclimate_example.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+
+---
+# Posterior dependence plots: MTCO
+
+&lt;img src="index_files/figure-html/pdps-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# Posterior dependence plots: GDD5
+&lt;img src="index_files/figure-html/pdp-gdd5-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# Posterior dependence plots: AET/PET
+&lt;img src="index_files/figure-html/pdp-aet-pet-1.svg" style="display: block; margin: auto;" /&gt;
+
+
+
+---
+# Estimated climate surface: Pinus.D
+
+&lt;img src="./figures/predictions_gdd5_mtco_pinus.d.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+---
+# Estimated climate surface: Picea
+
+&lt;img src="./figures/predictions_gdd5_mtco_picea.png" width="100%" style="display: block; margin: auto;" /&gt;
+
+
+---
+# Final remarks
+
+**Summary**
+
+
+  - Probability characterisation for zero-inflation in count-composition data ([Menezes et al., 2025](#bib-Menezes2025)).
+
+  - ZANIM-BART and ZANIM-LN-BART models address key challenges in 
+count-compositional data: zero-inflation, overdispersion, cross-sample heterogeneity, 
+unknown covariates effects.
+
+  - Develop MCMC algorithm for ZANIM-BART and ZANIM-LN-BART models combining
+  ZANIM data augmentation ([Menezes et al., 2025](#bib-Menezes2025)) established BART sampling routines.
+  
+  - Illustrate the useful of our models in the analysis of modern pollen-climate data.
+
+--
+
+**Future work**
+  
+  - Integrate our proposed models into the paleoclimate reconstruction framework of [Parnell et al. (2015)](#bib-Parnell2015).
+  
+  - Relax independence across `\(\mathbf{z}_i\)` using the
+  probit seemingly unrelated BART (probit-suBART) prior of &lt;a name=cite-Esser2025&gt;&lt;/a&gt;[Esser et al. (2025)](#bib-Esser2025).
+
+  &lt;!-- - Incorporate the multiplicative gamma process prior of  in ZANIM-LN-BART model. --&gt;
+
+---
+count: false
+# References
+
+.font60[
+&lt;a name=bib-Baker1994&gt;&lt;/a&gt;[Baker, S. G.](#cite-Baker1994) (1994). "The
+multinomial-Poisson transformation". In: _Journal of the Royal
+Statistical Society. Series D (The Statistician)_ 43.4, pp. 495-504.
+
+&lt;a name=bib-BlascoMoreno2019&gt;&lt;/a&gt;[Blasco-Moreno, A. et
+al.](#cite-BlascoMoreno2019) (2019). "What does a zero mean?
+Understanding false, random and structural zeros in ecology". In:
+_Methods in Ecology and Evolution_ 10.7, pp. 949-959. DOI:
+[10.1111/2041-210X.13185](https://doi.org/10.1111%2F2041-210X.13185).
+
+&lt;a name=bib-Chipman1998&gt;&lt;/a&gt;[Chipman, H. A. et al.](#cite-Chipman1998)
+(1998). "Bayesian CART Model Search". In: _Journal of the American
+Statistical Association_ 93.443, pp. 935-948. (Visited on Feb. 21,
+2024).
+
+&lt;a name=bib-Chipman2010&gt;&lt;/a&gt;[Chipman, H. A. et al.](#cite-Chipman2010)
+(2010). "BART: Bayesian additive regression trees". In: _The Annals of
+Applied Statistics_ 4.1, pp. 266-298.
+
+&lt;a name=bib-Esser2025&gt;&lt;/a&gt;[Esser, J. et al.](#cite-Esser2025) (2025).
+"Seemingly unrelated Bayesian additive regression trees for
+cost-effectiveness analyses in healthcare".
+
+arXiv: 2404.02228 [stat.ME]. URL:
+[https://arxiv.org/abs/2404.02228](https://arxiv.org/abs/2404.02228).
+
+&lt;a name=bib-Haslett2006&gt;&lt;/a&gt;[Haslett, J. et al.](#cite-Haslett2006)
+(2006). "Bayesian palaeoclimate reconstruction". In: _Journal of the
+Royal Statistical Society. Series A (Statistics in Society)_ 169.3, pp.
+395-438.
+
+&lt;a name=bib-Hastie2000&gt;&lt;/a&gt;[Hastie, T. et al.](#cite-Hastie2000)
+(2000). "Bayesian Backfitting". In: _Statistical Science_ 15.3, pp.
+196-213.
+
+&lt;a name=bib-Koslovsky2023&gt;&lt;/a&gt;[Koslovsky, M. D.](#cite-Koslovsky2023)
+(2023). "A Bayesian zero-inflated Dirichlet-multinomial regression
+model for multivariate compositional count data". In: _Biometrics_
+79.4, pp. 3239-3251.
+
+&lt;a name=bib-Linero2017&gt;&lt;/a&gt;[Linero, A. R.](#cite-Linero2017) (2017). "A
+review of tree-based Bayesian methods". In: _Communications for
+Statistical Applications and Methods_ 24.6, pp. 543-559.
+
+&lt;a name=bib-Linero2018&gt;&lt;/a&gt;[Linero, A. R.](#cite-Linero2018) (2018).
+"Bayesian Regression Trees for High-Dimensional Prediction and Variable
+Selection". In: _Journal of the American Statistical Association_
+113.522, pp. 626-636. DOI:
+[10.1080/01621459.2016.1264957](https://doi.org/10.1080%2F01621459.2016.1264957).
+
+&lt;a name=bib-Menezes2025&gt;&lt;/a&gt;[Menezes, A. F. et al.](#cite-Menezes2025)
+(2025). "Finite mixture representations of zero-and-$N$-inflated
+distributions for count-compositional data". In: _Journal of
+Multivariate Analysis_ 210, p. 105492. ISSN: 0047-259X. DOI:
+[10.1016/j.jmva.2025.105492](https://doi.org/10.1016%2Fj.jmva.2025.105492).
+]
+
+---
+count: false
+# References
+
+.font60[
+&lt;a name=bib-Murray2021&gt;&lt;/a&gt;[Murray, J. S.](#cite-Murray2021) (2021).
+"Log-linear Bayesian additive regression trees for multinomial logistic
+and count regression models". In: _Journal of the American Statistical
+Association_ 116.534, pp. 756-769.
+
+&lt;a name=bib-Parnell2015&gt;&lt;/a&gt;[Parnell, A. C. et al.](#cite-Parnell2015)
+(2015). "Bayesian inference for palaeoclimate with time uncertainty and
+stochastic volatility". In: _Journal of the Royal Statistical Society.
+Series C (Applied Statistics)_ 64.1, pp. 115-138.
+
+&lt;a name=bib-Rockova2020&gt;&lt;/a&gt;[Ročková, V. et al.](#cite-Rockova2020)
+(2020). "Posterior concentration for Bayesian regression trees and
+forests". In: _The Annals of Statistics_ 48.4, pp. 2108-2131.
+
+&lt;a name=bib-SalterTownshend2012&gt;&lt;/a&gt;[Salter-Townshend, M. et
+al.](#cite-SalterTownshend2012) (2012). "Fast inversion of a flexible
+regression model for multivariate pollen counts data". In:
+_Environmetrics_ 23, pp. 595-605.
+
+&lt;a name=bib-Sweeney2012&gt;&lt;/a&gt;[Sweeney, J.](#cite-Sweeney2012) (2012).
+"Advances in Bayesian Model Development and Inversion in Multivariate
+Inverse Inference Problems With Application to Palaeoclimate
+Reconstruction".
+
+&lt;a name=bib-Tang2018&gt;&lt;/a&gt;[Tang, Z. et al.](#cite-Tang2018) (2018).
+"Zero-inflated generalized Dirichlet multinomial regression model for
+microbiome compositional data analysis". In: _Biostatistics_ 20.4, pp.
+698-713.
+
+&lt;a name=bib-Tipton2019&gt;&lt;/a&gt;[Tipton, J. R. et al.](#cite-Tipton2019)
+(2019). "Predicting paleoclimate from compositional data using
+multivariate Gaussian process inverse prediction". In: _The Annals of
+Applied Statistics_ 13.4, pp. 2363-2388.
+
+&lt;a name=bib-Zeng2023&gt;&lt;/a&gt;[Zeng, Y. et al.](#cite-Zeng2023) (2023). "A
+zero-inflated logistic normal multinomial model for extracting
+microbial compositions". In: _Journal of the American Statistical
+Association_ 118.544, pp. 2356-2369.
+]
+
+
+
+---
+count: false
+class: middle, inverse
+# Thank you!
+
+.pull-right[
+
+&lt;a href="mailto:andrefelipemaringa@gmail.com"&gt;
+&lt;svg viewBox="0 0 512 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M440 6.5L24 246.4c-34.4 19.9-31.1 70.8 5.7 85.9L144 379.6V464c0 46.4 59.2 65.5 86.6 28.6l43.8-59.1 111.9 46.2c5.9 2.4 12.1 3.6 18.3 3.6 8.2 0 16.3-2.1 23.6-6.2 12.8-7.2 21.6-20 23.9-34.5l59.4-387.2c6.1-40.1-36.9-68.8-71.5-48.9zM192 464v-64.6l36.6 15.1L192 464zm212.6-28.7l-153.8-63.5L391 169.5c10.7-15.5-9.5-33.5-23.7-21.2L155.8 332.6 48 288 464 48l-59.4 387.3z"&gt;&lt;/path&gt;&lt;/svg&gt; andrefelipemaringa@gmail.com
+&lt;/a&gt;
+
+&lt;a href="https://andrmenezes.github.io/casi25"&gt;
+&lt;svg viewBox="0 0 512 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"&gt;&lt;/path&gt;&lt;/svg&gt; andrmenezes.github.io/ucd_wgsl__2025-11-20
+&lt;/a&gt;
+
+&lt;a href="http://github.com/AndrMenezes"&gt;
+&lt;svg viewBox="0 0 496 512" style="height:1em;position:relative;display:inline-block;top:.1em;" xmlns="http://www.w3.org/2000/svg"&gt;  &lt;path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"&gt;&lt;/path&gt;&lt;/svg&gt; @AndrMenezes
+&lt;/a&gt;
+
+&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;br&gt;
+]
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "ratio": "16:9",
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
