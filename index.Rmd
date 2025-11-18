@@ -289,7 +289,7 @@ Finite mixture representations of zero-and-_N_-inflated distributions for count-
 ---
 count: false
 class: middle, inverse
-# The Bayesian nonparametric models
+# The Bayesian novel nonparametric models
 
 ---
 # The Bayesian additive regression trees (BART) prior
@@ -297,24 +297,29 @@ class: middle, inverse
 .font75[
 
 - BART is Bayesian nonparametric prior that represents 
-an unknown function $f(\mathbf{x}_i)$ of interest as a sum of decision trees `r Citep(bib, "Chipman2010")`
+an unknown function $f(\mathbf{x}_i)$ of interest as a sum of decision trees `r Citep(bib, "Chipman2010")`:
 $$f(\mathbf{x}_i) = \sum_{h=1}^{m}g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h),$$
 where $g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h)$ denotes a binary decision
-tree parametrised by
-  - $\mathcal{T}_h$: binary tree topology leaf and branch nodes denoted by $\mathcal{L}_h$ and $\mathcal{B}_h$, respectively.
+tree parametrised by:
+  - Binary tree topology $\mathcal{T}_h$ with leaf and branch nodes
+  $\mathcal{L}_h$ and $\mathcal{B}_h$, respectively.
   - Each branch node $b\in \mathcal{B}_h$ there is a spitting rule of the form
 $\lbrack x_{j_{b}} \leq c_b\rbrack$.
   - $\mathcal{M}_h = \{\mu_{ht}\colon t \in \mathcal{L}_h\}$ are leaf node parameters with $\mu_{ht} \in \mathbb{R}$.
 
+--
+
 - The prior is $\pi(\mathcal{T}_h, \mathcal{M}_h) = \pi_\mathcal{T}(\mathcal{T}_h)\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)$.
-  - $\pi_\mathcal{T}(\mathcal{T}_h)$ is a branching process `r Citep(bib, "Chipman1998")`
+  - $\pi_\mathcal{T}(\mathcal{T}_h)$ is a branching process `r Citep(bib, "Chipman1998")`.
   - $\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)=\prod_{t \in \mathcal{L}_h} \pi_\mu(\mu_{ht})$,
 where $\pi_\mu$ is chosen so that it is conditionally conjugate.
 
-- Inference on the BART parameters $\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m$
-is performed by MCMC methods using Bayesian backfitting `r Citep(bib, "Hastie2000")`.
+--
 
-- Theoretical guard
+- Inference on $\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m$
+is conducted by MCMC using Bayesian backfitting `r Citep(bib, "Hastie2000")`.
+
+- Theoretical guard:
   - Gaussian process limit as $m \rightarrow \infty$ `r Citep(bib, "Linero2017")`.
   - Good rates of posterior convergence `r Citep(bib, "Linero2018", "Rockova2020")`.
 
@@ -431,10 +436,10 @@ e^{-\phi_i u_{ij}f^{(j)}(\mathbf{x}_i)}}
 
 - Independent BART updates for each $j\in\{1,\ldots,d\}$:
   - $(\mathcal{T}^{(\lambda_j)}_h, \Lambda_h^{(\lambda_j)})_{h=1}^{m_\lambda}$ using
-  `r Citet(bib, "Murray2021")` **generalised Bayesian backfitting** algorithm;
+  `r Citet(bib, "Murray2021")` **generalised Bayesian backfitting** algorithm.
   
   - $(\mathcal{T}^{(\zeta_j)}_h, \mathcal{M}_h^{(\zeta_j)})_{h=1}^{m_\zeta}$ using
-  `r Citet(bib, "Chipman2010")` **Bayesian backfitting** algorithm;
+  `r Citet(bib, "Chipman2010")` **Bayesian backfitting** algorithm.
 
 ]
 
@@ -451,7 +456,7 @@ knitr::include_graphics(path = "./figures/mcmc_algorithm.png")
 $N_i \sim \operatorname{Uniform}\lbrack 100, 500\rbrack$. Count simulated as follows
 
 $$\mathbf{Y}_i \sim \operatorname{Multinomial}\left\lbrack N_i, 
-\frac{z_{i1}\theta_{i1}}{\sum_{k=1}^4z_{ik}\theta_{ik}}, \ldots, \frac{z_{i4}\theta_{i4}}{\sum_{k=1}^4z_{ik}\theta_{ik}} \right\rbrack, \quad i\in\{1,\ldots,400\}$$
+\frac{z_{i1}\theta_{i1}}{\sum_{k=1}^4z_{ik}\theta_{ik}}, \ldots, \frac{z_{i4}\theta_{i4}}{\sum_{k=1}^4z_{ik}\theta_{ik}} \right\rbrack, \quad i\in\{1,\ldots,400\},$$
 where $z_{ij} \sim \operatorname{Bernoulli}\lbrack 1 - \zeta_{ij}\rbrack$.
 
 - Functional form of the parameters are given by
@@ -466,7 +471,7 @@ $\beta_{j\ell}$ were sampled from a standard normal distribution, and
 $\beta^{(\zeta_j)}_{0} = (0.5, 1.0, 1.5, 2.0)$.
 
 - We compared ZANIM-BART against multinomial-BART model of `r Citet(bib, "Murray2021")`,
-and ZANIDM linear regression model of `r Citet(bib, "Koslovsky2021")`.
+and ZANIDM linear regression model of `r Citet(bib, "Koslovsky2023")`.
 
 ---
 # Simulated example
