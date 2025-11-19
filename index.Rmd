@@ -596,7 +596,7 @@ class: middle, inverse
 
 - $n=7832$ samples of $d=28$ pollen species collected at different site locations in the 
 Northern Hemisphere, along with three climate covariates `r Citep(bib, "Parnell2015")`: 
-  - growing degree days above five $^\circ$ (GDD5): growing season warmth.
+  - growing degree days above five $5^\circ$ (GDD5): growing season warmth.
   - mean temperature of the coldest month (MTCO): harshness of the winter.
   - ratio of actual to potential evapotranspiration (AET/PET): available moisture.
 
