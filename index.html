@@ -76,7 +76,7 @@ with non-negative integer values defined in the discrete simplex space:
 ---
 ## Motivating example
 
-- Modern pollen-climate data: `\(n=7832\)` samples, `\(d=28\)` pollen species, `\(p=3\)` climate covariates, total counts `\(N_i \in \lbrack74, 1003\rbrack\)` &lt;a name=cite-Haslett2006&gt;&lt;/a&gt;&lt;a name=cite-SalterTownshend2012&gt;&lt;/a&gt;&lt;a name=cite-Parnell2015&gt;&lt;/a&gt;([Haslett et al., 2006](#bib-Haslett2006); [Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Parnell et al., 2015](#bib-Parnell2015)).
+- Modern pollen-climate data: `\(n=7832\)` samples, `\(d=28\)` pollen species, `\(p=3\)` climate covariates, total counts `\(N_i \in \lbrack74, 1003\rbrack\)` &lt;a name=cite-Haslett2006&gt;&lt;/a&gt;&lt;a name=cite-SalterTownshend2012&gt;&lt;/a&gt;&lt;a name=cite-Parnell2015&gt;&lt;/a&gt;([Haslett, Whiley, Bhattacharya et al., 2006](#bib-Haslett2006); [Salter-Townshend and Haslett, 2012](#bib-SalterTownshend2012); [Parnell, Sweeney, Doan et al., 2015](#bib-Parnell2015)).
 
 
 ```
@@ -132,7 +132,7 @@ with non-negative integer values defined in the discrete simplex space:
 indicating overdispersion.
 
 - Unknown relationship between the climate variables and the pollen composition.
-  - Gaussian markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space &lt;a name=cite-Sweeney2012&gt;&lt;/a&gt;&lt;a name=cite-Tipton2019&gt;&lt;/a&gt;([Haslett et al., 2006](#bib-Haslett2006); [Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012); [Tipton et al., 2019](#bib-Tipton2019)).
+  - Gaussian Markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space &lt;a name=cite-Sweeney2012&gt;&lt;/a&gt;&lt;a name=cite-Tipton2019&gt;&lt;/a&gt;([Haslett, Whiley, Bhattacharya et al., 2006](#bib-Haslett2006); [Salter-Townshend and Haslett, 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012); [Tipton, Hootem, Nolan et al., 2019](#bib-Tipton2019)).
 
 &lt;!-- , and the taxa-specific excess of zeros. --&gt;
 
@@ -142,16 +142,16 @@ indicating overdispersion.
 
 &gt; - **Paleoclimate studies**: break the multinomial into independent univariate 
 components using expert-informed hierarchical category (pollen species) structures.
-([Salter-Townshend et al., 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012)).
+([Salter-Townshend and Haslett, 2012](#bib-SalterTownshend2012); [Sweeney, 2012](#bib-Sweeney2012)).
 &gt; - **Microbiome studies**: explicitly account for zero-inflation in count-composition data,
-but rely simple linear regression structure:
-&lt;a name=cite-Tang2018&gt;&lt;/a&gt;&lt;a name=cite-Zeng2023&gt;&lt;/a&gt;&lt;a name=cite-Koslovsky2023&gt;&lt;/a&gt;([Tang et al., 2018](#bib-Tang2018); [Zeng et al., 2023](#bib-Zeng2023); [Koslovsky, 2023](#bib-Koslovsky2023)).
+but rely on simple linear regression structure:
+&lt;a name=cite-Tang2018&gt;&lt;/a&gt;&lt;a name=cite-Zeng2023&gt;&lt;/a&gt;&lt;a name=cite-Koslovsky2023&gt;&lt;/a&gt;([Tang and Chen, 2018](#bib-Tang2018); [Zeng, Pang, Zhao et al., 2023](#bib-Zeng2023); [Koslovsky, 2023](#bib-Koslovsky2023)).
 
 --
 
 .font120[Current work]
 
-&gt; 1. A unified framework for zero-inflation in count-compositional data &lt;a name=cite-Menezes2025&gt;&lt;/a&gt;([Menezes et al., 2025](#bib-Menezes2025)).
+&gt; 1. A unified framework for zero-inflation in count-compositional data &lt;a name=cite-Menezes2025&gt;&lt;/a&gt;([Menezes, Parnell, and Murphy, 2025](#bib-Menezes2025)).
 &gt; 2. Bayesian nonparametric models that jointly address zero-inflation, overdispersion, unobserved latent effects, and complex covariate relationships.
 
 ---
@@ -162,7 +162,7 @@ class: middle, inverse
 ---
 # Zero-inflation in count-compositional data
 
-- Zeros may have different meanings &lt;a name=cite-BlascoMoreno2019&gt;&lt;/a&gt;([Blasco-Moreno et al., 2019](#bib-BlascoMoreno2019)):
+- Zeros may have different meanings &lt;a name=cite-BlascoMoreno2019&gt;&lt;/a&gt;([Blasco-Moreno, Pérez-Casany, Puig et al., 2019](#bib-BlascoMoreno2019)):
   - Sampling zeros: due to sampling variability.
   - Structural zeros: related to constraints on experimental conditions (data collection). 
 
@@ -288,7 +288,7 @@ class: middle, inverse
 .font75[
 
 - BART is Bayesian nonparametric prior that represents 
-an unknown function `\(f(\mathbf{x}_i)\)` of interest as a sum of decision trees &lt;a name=cite-Chipman2010&gt;&lt;/a&gt;([Chipman et al., 2010](#bib-Chipman2010)):
+an unknown function `\(f(\mathbf{x}_i)\)` of interest as a sum of decision trees &lt;a name=cite-Chipman2010&gt;&lt;/a&gt;([Chipman, George, and McCulloch, 2010](#bib-Chipman2010)):
 `$$f(\mathbf{x}_i) = \sum_{h=1}^{m}g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h),$$`
 where `\(g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h)\)` denotes a binary decision
 tree parametrised by:
@@ -304,7 +304,7 @@ tree parametrised by:
 .font75[
 
 - The prior is `\(\pi(\mathcal{T}_h, \mathcal{M}_h) = \pi_\mathcal{T}(\mathcal{T}_h)\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)\)`.
-  - `\(\pi_\mathcal{T}(\mathcal{T}_h)\)` is a branching process &lt;a name=cite-Chipman1998&gt;&lt;/a&gt;([Chipman et al., 1998](#bib-Chipman1998)).
+  - `\(\pi_\mathcal{T}(\mathcal{T}_h)\)` is a branching process &lt;a name=cite-Chipman1998&gt;&lt;/a&gt;([Chipman, George, and McCulloch, 1998](#bib-Chipman1998)).
   - `\(\pi_{\mathcal{M}}(\mathcal{M}_h \mid \mathcal{T}_h)=\prod_{t \in \mathcal{L}_h} \pi_\mu(\mu_{ht})\)`,
 where `\(\pi_\mu\)` is chosen so that it is conditionally conjugate.
 
@@ -315,11 +315,12 @@ where `\(\pi_\mu\)` is chosen so that it is conditionally conjugate.
 .font75[
 
 - Inference on `\(\{(\mathcal{T}_h, \mathcal{M}_h)\}_{h=1}^m\)`
-is conducted by MCMC using Bayesian backfitting &lt;a name=cite-Hastie2000&gt;&lt;/a&gt;([Hastie et al., 2000](#bib-Hastie2000)).
+is conducted by MCMC using Bayesian backfitting &lt;a name=cite-Hastie2000&gt;&lt;/a&gt;([Hastie and Tibshirani, 2000](#bib-Hastie2000)).
 
 - Theoretical guard:
   - Gaussian process limit as `\(m \rightarrow \infty\)` &lt;a name=cite-Linero2017&gt;&lt;/a&gt;([Linero, 2017](#bib-Linero2017)).
-  - Good rates of posterior convergence &lt;a name=cite-Linero2018&gt;&lt;/a&gt;&lt;a name=cite-Rockova2020&gt;&lt;/a&gt;([Linero, 2018](#bib-Linero2018); [Ročková et al., 2020](#bib-Rockova2020)).
+  - Good rates of posterior convergence &lt;a name=cite-Linero2018&gt;&lt;/a&gt;&lt;a name=cite-Rockova2020&gt;&lt;/a&gt;([Linero, 2018](#bib-Linero2018); [Ročková and van der
+Pas, 2020](#bib-Rockova2020)).
 ]
 
 ---
@@ -345,7 +346,7 @@ the corresponding set of leaf node parameters with `\(\lambda_{htj}&gt;0\)`.
 
 --
 
-- probit-BART prior of [Chipman et al. (2010)](#bib-Chipman2010) for the *population-level*
+- probit-BART prior of [Chipman, George, and McCulloch (2010)](#bib-Chipman2010) for the *population-level*
 structural zero probabilities, `\(\pmb{\zeta}\)`:
 
 `$$\zeta_{ij} = \Phi\left( f^{(j)}_0(\mathbf{x}_i) \right)
@@ -381,7 +382,7 @@ where `\(\pmb{\Gamma} = \left\lbrack \gamma_{hj}\right\rbrack_{h=1,\ldots,d-1}^{
 `\(\pmb{\epsilon}_i \sim \operatorname{Normal}_{d-1}\left\lbrack\mathbf{0}_{d-1}, \pmb{\Psi}\right\rbrack\)`, with
 `\(\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}\)`.
 
-&lt;!-- - Full conditional Gaussian updates are readily available for  --&gt;
+&lt;!-- - Full conditionals Gaussian updates are readily available for  --&gt;
 &lt;!-- `\(\pmb{\Gamma}\)`, `\(\pmb{\Psi}\)`, and `\(\pmb{\eta}_i\)`. --&gt;
 
 &lt;!-- - The variance of `\(\mathbf{v}_i\)` is decomposed as `\(\pmb{\Sigma}_V = \pmb{\Gamma} \pmb{\Gamma}^\top + \pmb{\Psi}\)`. --&gt;
@@ -398,7 +399,7 @@ where `\(\pmb{\Gamma} = \left\lbrack \gamma_{hj}\right\rbrack_{h=1,\ldots,d-1}^{
 - Let `\(\pmb{f} = (f^{(1)}, \ldots, f^{(d)})\)` and `\(\pmb{f}_0 = (f_0^{(1)}, \ldots, f_0^{(d)})\)`
 denote the independent BART priors that characterise our models.
 
-- Data augmentation scheme of [Menezes et al. (2025)](#bib-Menezes2025):
+- Data augmentation scheme of [Menezes, Parnell, and Murphy (2025)](#bib-Menezes2025):
 `$$(\phi_i \mid \mathbf{y}_i, \mathbf{z}_i, \pmb{f})  \overset{\operatorname{ind.}}{\sim}
 \operatorname{Gamma}\left\lbrack N_i, \sum_{j=1}^d z_{ij}f^{(j)}(\mathbf{x}_i)e^{u_{ij}}\right\rbrack,
 \quad i\in\{1,\ldots,n\}$$`
@@ -435,7 +436,7 @@ e^{-\phi_i u_{ij}f^{(j)}(\mathbf{x}_i)}}
   [Murray (2021)](#bib-Murray2021) **generalised Bayesian backfitting** algorithm.
   
   - `\((\mathcal{T}^{(\zeta_j)}_h, \mathcal{M}_h^{(\zeta_j)})_{h=1}^{m_\zeta}\)` using
-  [Chipman et al. (2010)](#bib-Chipman2010) **Bayesian backfitting** algorithm.
+  [Chipman, George, and McCulloch (2010)](#bib-Chipman2010) **Bayesian backfitting** algorithm.
 
 ]
 
@@ -494,7 +495,7 @@ class: middle, inverse
 # Context
 
 - `\(n=7832\)` samples of `\(d=28\)` pollen species collected at different site locations in the 
-Northern Hemisphere, along with three climate covariates ([Parnell et al., 2015](#bib-Parnell2015)): 
+Northern Hemisphere, along with three climate covariates ([Parnell, Sweeney, Doan et al., 2015](#bib-Parnell2015)): 
   - growing degree days above five `\(5^\circ\)` (GDD5): growing season warmth.
   - mean temperature of the coldest month (MTCO): harshness of the winter.
   - ratio of actual to potential evapotranspiration (AET/PET): available moisture.
@@ -503,7 +504,7 @@ Northern Hemisphere, along with three climate covariates ([Parnell et al., 2015]
 
 
 
-- `\(m_\lambda = m_\zeta = 100\)` trees for `\(j\in\{1,\ldots, 28\}\)`. It took `\(3\)` hours for `\(10,000\)` iterations.
+- `\(m_\lambda = m_\zeta = 100\)` trees for `\(j\in\{1,\ldots, 28\}\)`. It took approximately `\(3\)` hours for `\(10,000\)` iterations.
 
 ---
 # Goodness-of-fit
@@ -541,11 +542,11 @@ Northern Hemisphere, along with three climate covariates ([Parnell et al., 2015]
 # Final remarks
 
 
-.font90[
+.font75[
 
 **Summary**
 
-  - Probability characterisation for zero-inflation in count-composition data ([Menezes et al., 2025](#bib-Menezes2025)).
+  - Probability characterisation for zero-inflation in count-composition data ([Menezes, Parnell, and Murphy, 2025](#bib-Menezes2025)).
 
   - ZANIM-BART and ZANIM-LN-BART models address key challenges in 
 count-compositional data: zero-inflation, overdispersion, cross-sample heterogeneity, 
@@ -559,16 +560,17 @@ unknown covariates effects.
 
 --
 
-.font90[
+.font75[
 
 **Future work**
   
-  - Integrate our proposed models into the paleoclimate reconstruction framework of [Parnell et al. (2015)](#bib-Parnell2015).
+  - Integrate our proposed models into the paleoclimate reconstruction framework of [Parnell, Sweeney, Doan et al. (2015)](#bib-Parnell2015).
   
   - Relax the independence across `\(\mathbf{z}_i\)` using the
-  probit seemingly unrelated BART (probit-suBART) prior of &lt;a name=cite-Esser2025&gt;&lt;/a&gt;[Esser et al. (2025)](#bib-Esser2025).
+  probit seemingly unrelated BART (probit-suBART) prior of &lt;a name=cite-Esser2025&gt;&lt;/a&gt;[Esser, Maia, Parnell et al. (2025)](#bib-Esser2025).
 
-  - Incorporate the multiplicative gamma process prior of &lt;a name=cite-Bhattacharya2011&gt;&lt;/a&gt;[Bhattacharya et al. (2011)](#bib-Bhattacharya2011) in ZANIM-LN-BART model.
+  - Incorporate the multiplicative gamma process prior of &lt;a name=cite-Bhattacharya2011&gt;&lt;/a&gt;[Bhattacharya and Dunson (2011)](#bib-Bhattacharya2011) 
+  into the factor-analytic covariance for the random effects of the ZANIM-LN-BART model.
 ]
 
 
@@ -581,41 +583,42 @@ count: false
 multinomial-Poisson transformation". In: _Journal of the Royal
 Statistical Society. Series D (The Statistician)_ 43.4, pp. 495-504.
 
-&lt;a name=bib-Bhattacharya2011&gt;&lt;/a&gt;[Bhattacharya, A. et
-al.](#cite-Bhattacharya2011) (2011). "Sparse Bayesian infinite factor
-models". In: _Biometrika_ 98.2, pp. 291-306. DOI:
+&lt;a name=bib-Bhattacharya2011&gt;&lt;/a&gt;[Bhattacharya, A. and D. B.
+Dunson](#cite-Bhattacharya2011) (2011). "Sparse Bayesian infinite
+factor models". In: _Biometrika_ 98.2, pp. 291-306. DOI:
 [10.1093/biomet/asr013](https://doi.org/10.1093%2Fbiomet%2Fasr013).
 
-&lt;a name=bib-BlascoMoreno2019&gt;&lt;/a&gt;[Blasco-Moreno, A. et
-al.](#cite-BlascoMoreno2019) (2019). "What does a zero mean?
-Understanding false, random and structural zeros in ecology". In:
+&lt;a name=bib-BlascoMoreno2019&gt;&lt;/a&gt;[Blasco-Moreno, A., M. Pérez-Casany,
+P. Puig, et al.](#cite-BlascoMoreno2019) (2019). "What does a zero
+mean? Understanding false, random and structural zeros in ecology". In:
 _Methods in Ecology and Evolution_ 10.7, pp. 949-959. DOI:
 [10.1111/2041-210X.13185](https://doi.org/10.1111%2F2041-210X.13185).
 
-&lt;a name=bib-Chipman1998&gt;&lt;/a&gt;[Chipman, H. A. et al.](#cite-Chipman1998)
-(1998). "Bayesian CART Model Search". In: _Journal of the American
-Statistical Association_ 93.443, pp. 935-948. (Visited on Feb. 21,
-2024).
+&lt;a name=bib-Chipman1998&gt;&lt;/a&gt;[Chipman, H. A., E. I. George, and R. E.
+McCulloch](#cite-Chipman1998) (1998). "Bayesian CART Model Search". In:
+_Journal of the American Statistical Association_ 93.443, pp. 935-948.
+(Visited on Feb. 21, 2024).
 
-&lt;a name=bib-Chipman2010&gt;&lt;/a&gt;[Chipman, H. A. et al.](#cite-Chipman2010)
-(2010). "BART: Bayesian additive regression trees". In: _The Annals of
-Applied Statistics_ 4.1, pp. 266-298.
+&lt;a name=bib-Chipman2010&gt;&lt;/a&gt;[Chipman, H. A., E. I. George, and R. E.
+McCulloch](#cite-Chipman2010) (2010). "BART: Bayesian additive
+regression trees". In: _The Annals of Applied Statistics_ 4.1, pp.
+266-298.
 
-&lt;a name=bib-Esser2025&gt;&lt;/a&gt;[Esser, J. et al.](#cite-Esser2025) (2025).
-"Seemingly unrelated Bayesian additive regression trees for
-cost-effectiveness analyses in healthcare".
+&lt;a name=bib-Esser2025&gt;&lt;/a&gt;[Esser, J., M. M. Maia, A. C. Parnell, et
+al.](#cite-Esser2025) (2025). "Seemingly unrelated Bayesian additive
+regression trees for cost-effectiveness analyses in healthcare".
 
 arXiv: 2404.02228 [stat.ME]. URL:
 [https://arxiv.org/abs/2404.02228](https://arxiv.org/abs/2404.02228).
 
-&lt;a name=bib-Haslett2006&gt;&lt;/a&gt;[Haslett, J. et al.](#cite-Haslett2006)
-(2006). "Bayesian palaeoclimate reconstruction". In: _Journal of the
-Royal Statistical Society. Series A (Statistics in Society)_ 169.3, pp.
-395-438.
+&lt;a name=bib-Haslett2006&gt;&lt;/a&gt;[Haslett, J., M. Whiley, S. Bhattacharya,
+et al.](#cite-Haslett2006) (2006). "Bayesian palaeoclimate
+reconstruction". In: _Journal of the Royal Statistical Society. Series
+A (Statistics in Society)_ 169.3, pp. 395-438.
 
-&lt;a name=bib-Hastie2000&gt;&lt;/a&gt;[Hastie, T. et al.](#cite-Hastie2000)
-(2000). "Bayesian Backfitting". In: _Statistical Science_ 15.3, pp.
-196-213.
+&lt;a name=bib-Hastie2000&gt;&lt;/a&gt;[Hastie, T. and R.
+Tibshirani](#cite-Hastie2000) (2000). "Bayesian Backfitting". In:
+_Statistical Science_ 15.3, pp. 196-213.
 
 &lt;a name=bib-Koslovsky2023&gt;&lt;/a&gt;[Koslovsky, M. D.](#cite-Koslovsky2023)
 (2023). "A Bayesian zero-inflated Dirichlet-multinomial regression
@@ -638,10 +641,11 @@ count: false
 # References
 
 .font60[
-&lt;a name=bib-Menezes2025&gt;&lt;/a&gt;[Menezes, A. F. et al.](#cite-Menezes2025)
-(2025). "Finite mixture representations of zero-and-$N$-inflated
-distributions for count-compositional data". In: _Journal of
-Multivariate Analysis_ 210, p. 105492. ISSN: 0047-259X. DOI:
+&lt;a name=bib-Menezes2025&gt;&lt;/a&gt;[Menezes, A. F., A. C. Parnell, and K.
+Murphy](#cite-Menezes2025) (2025). "Finite mixture representations of
+zero-and-$N$-inflated distributions for count-compositional data". In:
+_Journal of Multivariate Analysis_ 210, p. 105492. ISSN: 0047-259X.
+DOI:
 [10.1016/j.jmva.2025.105492](https://doi.org/10.1016%2Fj.jmva.2025.105492).
 
 &lt;a name=bib-Murray2021&gt;&lt;/a&gt;[Murray, J. S.](#cite-Murray2021) (2021).
@@ -649,18 +653,20 @@ Multivariate Analysis_ 210, p. 105492. ISSN: 0047-259X. DOI:
 and count regression models". In: _Journal of the American Statistical
 Association_ 116.534, pp. 756-769.
 
-&lt;a name=bib-Parnell2015&gt;&lt;/a&gt;[Parnell, A. C. et al.](#cite-Parnell2015)
-(2015). "Bayesian inference for palaeoclimate with time uncertainty and
-stochastic volatility". In: _Journal of the Royal Statistical Society.
-Series C (Applied Statistics)_ 64.1, pp. 115-138.
+&lt;a name=bib-Parnell2015&gt;&lt;/a&gt;[Parnell, A. C., J. Sweeney, T. K. Doan, et
+al.](#cite-Parnell2015) (2015). "Bayesian inference for palaeoclimate
+with time uncertainty and stochastic volatility". In: _Journal of the
+Royal Statistical Society. Series C (Applied Statistics)_ 64.1, pp.
+115-138.
 
-&lt;a name=bib-Rockova2020&gt;&lt;/a&gt;[Ročková, V. et al.](#cite-Rockova2020)
-(2020). "Posterior concentration for Bayesian regression trees and
-forests". In: _The Annals of Statistics_ 48.4, pp. 2108-2131.
+&lt;a name=bib-Rockova2020&gt;&lt;/a&gt;[Ročková, V. and S. van der
+Pas](#cite-Rockova2020) (2020). "Posterior concentration for Bayesian
+regression trees and forests". In: _The Annals of Statistics_ 48.4, pp.
+2108-2131.
 
-&lt;a name=bib-SalterTownshend2012&gt;&lt;/a&gt;[Salter-Townshend, M. et
-al.](#cite-SalterTownshend2012) (2012). "Fast inversion of a flexible
-regression model for multivariate pollen counts data". In:
+&lt;a name=bib-SalterTownshend2012&gt;&lt;/a&gt;[Salter-Townshend, M. and J.
+Haslett](#cite-SalterTownshend2012) (2012). "Fast inversion of a
+flexible regression model for multivariate pollen counts data". In:
 _Environmetrics_ 23, pp. 595-605.
 
 &lt;a name=bib-Sweeney2012&gt;&lt;/a&gt;[Sweeney, J.](#cite-Sweeney2012) (2012).
@@ -668,15 +674,21 @@ _Environmetrics_ 23, pp. 595-605.
 Inverse Inference Problems With Application to Palaeoclimate
 Reconstruction".
 
-&lt;a name=bib-Tang2018&gt;&lt;/a&gt;[Tang, Z. et al.](#cite-Tang2018) (2018).
+&lt;a name=bib-Tang2018&gt;&lt;/a&gt;[Tang, Z. and G. Chen](#cite-Tang2018) (2018).
 "Zero-inflated generalized Dirichlet multinomial regression model for
 microbiome compositional data analysis". In: _Biostatistics_ 20.4, pp.
 698-713.
 
-&lt;a name=bib-Tipton2019&gt;&lt;/a&gt;[Tipton, J. R. et al.](#cite-Tipton2019)
-(2019). "Predicting paleoclimate from compositional data using
-multivariate Gaussian process inverse prediction". In: _The Annals of
-Applied Statistics_ 13.4, pp. 2363-2388.
+&lt;a name=bib-Tipton2019&gt;&lt;/a&gt;[Tipton, J. R., M. B. Hootem, C. Nolan, et
+al.](#cite-Tipton2019) (2019). "Predicting paleoclimate from
+compositional data using multivariate Gaussian process inverse
+prediction". In: _The Annals of Applied Statistics_ 13.4, pp.
+2363-2388.
+
+&lt;a name=bib-Zeng2023&gt;&lt;/a&gt;[Zeng, Y., D. Pang, H. Zhao, et
+al.](#cite-Zeng2023) (2023). "A zero-inflated logistic normal
+multinomial model for extracting microbial compositions". In: _Journal
+of the American Statistical Association_ 118.544, pp. 2356-2369.
 ]
 
 

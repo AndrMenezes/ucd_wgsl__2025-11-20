@@ -32,8 +32,10 @@ theme_set(
 )
 options(digits = 4L)
 
-BibOptions(check.entries = FALSE, bib.style = "authoryear", style = "markdown",
-           hyperlink = TRUE, dashed = TRUE, max.names = 1, longnamesfirst = FALSE)
+BibOptions(check.entries = FALSE, bib.style = "authoryear", 
+           cite.style = 'authoryear',
+           style = "markdown",
+           hyperlink = TRUE, dashed = TRUE, max.names = 3, longnamesfirst = FALSE)
 bib <- ReadBib("./references.bib", check = FALSE)
 data_pollen <- read.csv(file = file.path("./data", "rs11_pollen.csv"))
 data_pollen <- dplyr::as_tibble(data_pollen)
@@ -146,7 +148,7 @@ dplyr::select(dplyr::filter(data_pollen, prop == 1), id, specie, total, prop,
 indicating overdispersion.
 
 - Unknown relationship between the climate variables and the pollen composition.
-  - Gaussian markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Sweeney2012", "Tipton2019"))`.
+  - Gaussian Markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Sweeney2012", "Tipton2019"))`.
 
 <!-- , and the taxa-specific excess of zeros. -->
 
@@ -158,7 +160,7 @@ indicating overdispersion.
 components using expert-informed hierarchical category (pollen species) structures.
 `r Citep(bib, c("SalterTownshend2012", "Sweeney2012"))`.
 > - **Microbiome studies**: explicitly account for zero-inflation in count-composition data,
-but rely simple linear regression structure:
+but rely on simple linear regression structure:
 `r Citep(bib, c("Tang2018", "Zeng2023", "Koslovsky2023"))`.
 
 --
@@ -442,7 +444,7 @@ $\pmb{\eta}_i \sim \operatorname{Normal}_k\lbrack \mathbf{0}_k, \mathbf{I}_k\rbr
 $\pmb{\epsilon}_i \sim \operatorname{Normal}_{d-1}\left\lbrack\mathbf{0}_{d-1}, \pmb{\Psi}\right\rbrack$, with
 $\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}$.
 
-<!-- - Full conditional Gaussian updates are readily available for  -->
+<!-- - Full conditionals Gaussian updates are readily available for  -->
 <!-- $\pmb{\Gamma}$, $\pmb{\Psi}$, and $\pmb{\eta}_i$. -->
 
 <!-- - The variance of $\mathbf{v}_i$ is decomposed as $\pmb{\Sigma}_V = \pmb{\Gamma} \pmb{\Gamma}^\top + \pmb{\Psi}$. -->
@@ -665,7 +667,7 @@ data_pollen |>
   labs(y = "Pollen composition", x = "Mean temperature of coldest month (MTCO)")
 ```
 
-- $m_\lambda = m_\zeta = 100$ trees for $j\in\{1,\ldots, 28\}$. It took $3$ hours for $10,000$ iterations.
+- $m_\lambda = m_\zeta = 100$ trees for $j\in\{1,\ldots, 28\}$. It took approximately $3$ hours for $10,000$ iterations.
 
 ---
 # Goodness-of-fit
@@ -740,7 +742,7 @@ knitr::include_graphics("./figures/predictions_gdd5_mtco_picea.png")
 # Final remarks
 
 
-.font90[
+.font75[
 
 **Summary**
 
@@ -758,7 +760,7 @@ unknown covariates effects.
 
 --
 
-.font90[
+.font75[
 
 **Future work**
   
@@ -767,7 +769,8 @@ unknown covariates effects.
   - Relax the independence across $\mathbf{z}_i$ using the
   probit seemingly unrelated BART (probit-suBART) prior of `r Citet(bib, "Esser2025")`.
 
-  - Incorporate the multiplicative gamma process prior of `r Citet(bib, "Bhattacharya2011")` in ZANIM-LN-BART model.
+  - Incorporate the multiplicative gamma process prior of `r Citet(bib, "Bhattacharya2011")` 
+  into the factor-analytic covariance for the random effects of the ZANIM-LN-BART model.
 ]
 
 
@@ -787,7 +790,7 @@ count: false
 
 .font60[
 ```{r bib2, results='asis', echo=FALSE}
-RefManageR::PrintBibliography(bib, start = 12, end = 19)
+RefManageR::PrintBibliography(bib, start = 12, end = 20)
 ```
 ]
 
