@@ -78,7 +78,7 @@ range(tab_emp[, 2])
 
 > Multivariate counts constrained by a random or fixed total.
 
-- The data is usually collected in a matrix $\mathbf{Y} \in \mathbb{N}^{n\times d}_0$,
+- The data are usually collected in a matrix $\mathbf{Y} \in \mathbb{N}^{n\times d}_0$,
 with $n$ samples and $d$ categories.
 
 - Each row is a random vector $\mathbf{Y}_i = (Y_{i1}, \ldots, Y_{id})$
@@ -96,7 +96,7 @@ $$\mathbb{S}_N^d = \left\{\mathbf{Y}_i \in \left(0, 1, \ldots, N_i\right)^d; \su
 ---
 ## Motivating example
 
-- Modern pollen-climate data: $n=7832$ samples, $d=28$ pollen species, $p=3$ climate covariates, total counts $N_i \in \{74, 1003\}$ `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Parnell2015"))`.
+- Modern pollen-climate data: $n=7832$ samples, $d=28$ pollen species, $p=3$ climate covariates, total counts $N_i \in \lbrack74, 1003\rbrack$ `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Parnell2015"))`.
 
 ```{r glimpse}
 data_pollen |>
@@ -142,7 +142,8 @@ dplyr::select(dplyr::filter(data_pollen, prop == 1), id, specie, total, prop,
               gdd5, mtco, aet.pet, longitude, latitude, altitude)
 ```
 
-- Heterogeneity: complex cross-sample variation, $\operatorname{DI}(Y_j)=\operatorname{Var}(Y_j)/\mathbb{E}(Y_j)$ ranging from $41.15$ (_Ostrya_) and $470.18$ (_Cedrus_).
+- Heterogeneity: $\operatorname{DI}(Y_j)=\operatorname{Var}(Y_j)/\mathbb{E}(Y_j)$ ranging from $41.15$ (_Ostrya_) and $470.18$ (_Cedrus_),
+indicating overdispersion.
 
 - Unknown relationship between the climate variables and the pollen composition.
   - Gaussian markov random field (GMRF) have been used as a smooth prior function in one, two and three-dimensional climate space `r Citep(bib, c("Haslett2006", "SalterTownshend2012", "Sweeney2012", "Tipton2019"))`.
@@ -156,13 +157,13 @@ dplyr::select(dplyr::filter(data_pollen, prop == 1), id, specie, total, prop,
 > - **Paleoclimate studies**: break the multinomial into independent univariate 
 components using expert-informed hierarchical category (pollen species) structures.
 `r Citep(bib, c("SalterTownshend2012", "Sweeney2012"))`.
-> - **Microbiome studies**: explicit account for zero-inflation in count-composition data,
+> - **Microbiome studies**: explicitly account for zero-inflation in count-composition data,
 but rely simple linear regression structure:
 `r Citep(bib, c("Tang2018", "Zeng2023", "Koslovsky2023"))`.
 
 --
 
-.font120[Our contributions]
+.font120[Current work]
 
 > 1. A unified framework for zero-inflation in count-compositional data `r Citep(bib, "Menezes2025")`.
 > 2. Bayesian nonparametric models that jointly address zero-inflation, overdispersion, unobserved latent effects, and complex covariate relationships.
@@ -182,9 +183,11 @@ class: middle, inverse
 - The common probability distributions (multinomial and Dirichlet-multinomial)
 for count-compositional can not handle excess of zeros.
 
+--
+
 - Excess zeros can occur in a single category or across multiple categories.
   
-  - In $d = 5$ and $N = 12$: $\mathbf{Y}_i = (2, 3, 0, 4, 3)$, $\mathbf{Y}_i = (9, 3, 0, 0, 0)$ or
+  - $d = 5$ and $N = 12$: $\mathbf{Y}_i = (2, 3, 0, 4, 3)$, $\mathbf{Y}_i = (9, 3, 0, 0, 0)$ or
 $\mathbf{Y}_i = (12, 0, 0, 0, 0)$.
 
   - There are $2^d - 1$ different settings where zeros can occur in the random vector $\mathbf{Y}_i \in \mathbb{S}^d_{N_i}$.
@@ -197,7 +200,7 @@ remaining category will coincide with the number of trials, $N_i$.
 
 - $\mathbf{Y}_i \sim \operatorname{Multinomial}\left\lbrack N_i, \boldsymbol{\theta}\right\rbrack$,
 where 
-$\boldsymbol{\theta} = (\theta_1, \ldots, \theta_d)$ is the *population-level* count
+$\boldsymbol{\theta} = (\theta_1, \ldots, \theta_d)$ are the *population-level* count
 probabilities defined on the continuous simplex
 $\{\pmb{\theta}\in\mathbb{R}^d; \theta_j > 0, \sum_{j=1}^d \theta_j=1\}$.
 
@@ -270,11 +273,58 @@ $$\begin{align*}
 > We refer to $$\vartheta_{ij} = \frac{z_{ij}\theta_j}{\sum_{k=1}^d z_{ik}\theta_k}$$
 as the *individual-level* count probabilities, for $i\in\{1,\ldots,n\}$ and $j\in\{1,\ldots,d\}$.
 
---
+---
+### Marginal PMF $\pmb{\theta} = (0.05, 0.70, 0.25)$, $\pmb{\zeta} = (0.05, 0.15, 0.10)$, and $N=30$
 
-> We show that the zero-and-_N_-inflated Dirichlet-multinomial (ZANIDM) distribution
+```{r marginal-pmf, fig.width = 12, fig.height = 4}
+d <- 3L
+m <- 30L
+theta <- c(0.05, 0.70, 0.25)
+zeta <- c(0.10, 0.15, 0.05)
+
+xx <- seq.int(0, m)
+pmf_zanim <- matrix(data = 0L, nrow = length(xx), ncol = d)
+pmf_mult <- matrix(data = 0L, nrow = length(xx), ncol = d)
+
+for (i in seq_along(xx)) {
+  pmf_zanim[i, 1L] <- zanim::dzanim_marginal(x = xx[i], size = m, prob = theta,
+                                      zeta = zeta, j = 1L)
+  pmf_zanim[i, 2L] <- zanim::dzanim_marginal(x = xx[i], size = m, prob = theta,
+                                      zeta = zeta, j = 2L)
+  pmf_zanim[i, 3L] <- zanim::dzanim_marginal(x = xx[i], size = m, prob = theta,
+                                      zeta = zeta, j = 3L)
+}
+pmf_mult[, 1L] <- dbinom(x = xx, size = m, prob = theta[1L])
+pmf_mult[, 2L] <- dbinom(x = xx, size = m, prob = theta[2L])
+pmf_mult[, 3L] <- dbinom(x = xx, size = m, prob = theta[3L])
+
+
+data_pmf_zanim <- dplyr::tibble(dist = "ZANIM",
+                                x = rep(xx, d),
+                                pmf = c(pmf_zanim),
+                                cat = rep(paste0("j == ", 1:d),
+                                          each = length(xx)))
+data_pmf_mult <- dplyr::tibble(dist = "Multinomial",
+                               x = rep(xx, d),
+                               pmf = c(pmf_mult),
+                               cat = rep(paste0("j == ", 1:d),
+                                         each = length(xx)))
+data_pmf <- rbind(data_pmf_mult, data_pmf_zanim)
+ggplot(data = dplyr::filter(data_pmf),
+            aes(x = x, y = pmf, col = dist)) +
+  facet_wrap(~cat, nrow = 1L, scales = "free", labeller = label_parsed) +
+  geom_pointrange(mapping = aes(ymin = 0, ymax = pmf),
+                  size = 0.12, fill = 0.2) +
+  scale_x_continuous(breaks = scales::pretty_breaks(8)) +
+  labs(x = "k", y = latex2exp::TeX(r'($\Pr\lbrack Y_j = k \rbrack$)'),
+       col = "") +
+  colorspace::scale_color_discrete_qualitative()
+```
+
+--
+> We also show that the zero-and-_N_-inflated Dirichlet-multinomial (ZANIDM) distribution
 intoduced by `r Citet(bib, "Koslovsky2023")`
-also admits a finite mixture representation and we derive moments, marginals, and fully conjugate Bayesian inference schemes for both distributions.
+admits a finite mixture representation and we derive moments, marginals, and fully conjugate Bayesian inference schemes for both distributions.
 
 ---
 # [Menezes, Parnell, and Murphy (2025)]()
@@ -289,7 +339,7 @@ Finite mixture representations of zero-and-_N_-inflated distributions for count-
 ---
 count: false
 class: middle, inverse
-# The Bayesian novel nonparametric models
+# The novel Bayesian nonparametric models
 
 ---
 # The Bayesian additive regression trees (BART) prior
@@ -303,7 +353,7 @@ where $g(\mathbf{x}_i, \mathcal{T}_h, \mathcal{M}_h)$ denotes a binary decision
 tree parametrised by:
   - Binary tree topology $\mathcal{T}_h$ with leaf and branch nodes
   $\mathcal{L}_h$ and $\mathcal{B}_h$, respectively.
-  - Each branch node $b\in \mathcal{B}_h$ there is a spitting rule of the form
+  - In each branch node $b\in \mathcal{B}_h$ there is a spitting rule of the form
 $\lbrack x_{j_{b}} \leq c_b\rbrack$.
   - $\mathcal{M}_h = \{\mu_{ht}\colon t \in \mathcal{L}_h\}$ are leaf node parameters with $\mu_{ht} \in \mathbb{R}$.
 ]
@@ -342,7 +392,7 @@ knitr::include_graphics("./figures/trees_from_mmm.png")
 ---
 # The ZANIM-BART model
 
-- *population-level* count probabilities, $\pmb{\theta}$ `r Citep(bib, "Murray2021")`:
+- log-linear BART prior of `r Citet(bib, "Murray2021")` for the *population-level* count probabilities, $\pmb{\theta}$:
 
 $$\theta_{ij} = \frac{f^{(j)}(\mathbf{x}_i)}{\sum_{k=1}^d f^{(k)}(\mathbf{x}_i)},
 \quad \textrm{with} \quad
@@ -352,19 +402,20 @@ $$\theta_{ij} = \frac{f^{(j)}(\mathbf{x}_i)}{\sum_{k=1}^d f^{(k)}(\mathbf{x}_i)}
 where $\mathcal{T}^{(\lambda_j)}_{h}$ denotes the $h$-th binary tree topology
 for the category $j$ and 
 $\Lambda^{(\lambda_j)}_{h} = \{\lambda_{htj}\colon \mathcal{L}^{(\lambda_j)}_h\}$ 
-the corresponding set of leaf nodes parameters with $\lambda_{htj}>0$.
+the corresponding set of leaf node parameters with $\lambda_{htj}>0$.
 
 --
 
-- *population-level*  structural zero probabilities, $\pmb{\zeta}$ `r Citep(bib, "Chipman2010")`:
+- probit-BART prior of `r Citet(bib, "Chipman2010")` for the *population-level*
+structural zero probabilities, $\pmb{\zeta}$:
 
 $$\zeta_{ij} = \Phi\left( f^{(j)}_0(\mathbf{x}_i) \right)
 = \Phi\left\lbrack \sum_{h=1}^{m_\zeta} 
 g\left(\mathbf{x}_i; \mathcal{T}^{(\zeta_j)}_{h}, \mathcal{M}^{(\zeta_j)}_{h}\right)
 \right\rbrack, \quad j\in \{1,\ldots,d\}$$
-where $\Phi(\cdot)$ is cumulative distribution function of standard normal random variable,
+where $\Phi(\cdot)$ is the cumulative distribution function of a standard normal random variable,
 and $\mathcal{T}^{(\zeta_j)}_{h}$ and $\mathcal{M}^{(\zeta_j)}_{h} = \{\mu_{htj}\colon \mathcal{L}^{(\zeta_j)}_h \}$
-are the category-specific tree structure and leaf nodes parameters, respectively.
+are the category-specific tree structure and leaf node parameters, respectively.
 
 
 ---
@@ -406,7 +457,7 @@ $\pmb{\Psi}=\operatorname{diag}\left\{ \psi_1, \ldots, \psi_{d-1}\right\}$.
 .font70[
 
 - Let $\pmb{f} = (f^{(1)}, \ldots, f^{(d)})$ and $\pmb{f}_0 = (f_0^{(1)}, \ldots, f_0^{(d)})$
-denote the independent BART priors that defined our models.
+denote the independent BART priors that characterise our models.
 
 - Data augmentation scheme of `r Citet(bib, "Menezes2025")`:
 $$(\phi_i \mid \mathbf{y}_i, \mathbf{z}_i, \pmb{f})  \overset{\operatorname{ind.}}{\sim}
@@ -688,8 +739,10 @@ knitr::include_graphics("./figures/predictions_gdd5_mtco_picea.png")
 ---
 # Final remarks
 
-**Summary**
 
+.font90[
+
+**Summary**
 
   - Probability characterisation for zero-inflation in count-composition data `r Citep(bib, "Menezes2025")`.
 
@@ -697,21 +750,26 @@ knitr::include_graphics("./figures/predictions_gdd5_mtco_picea.png")
 count-compositional data: zero-inflation, overdispersion, cross-sample heterogeneity, 
 unknown covariates effects.
 
-  - Develop MCMC algorithm for ZANIM-BART and ZANIM-LN-BART models combining
-  ZANIM data augmentation `r Citep(bib, "Menezes2025")` established BART sampling routines.
+  - Developed MCMC algorithm for ZANIM-BART and ZANIM-LN-BART models combining
+  ZANIM data augmentation established BART sampling routines.
   
-  - Illustrate the useful of our models in the analysis of modern pollen-climate data.
+  - Illustrated the useful of our models in the analysis of modern pollen-climate data.
+]
 
 --
+
+.font90[
 
 **Future work**
   
   - Integrate our proposed models into the paleoclimate reconstruction framework of `r Citet(bib, "Parnell2015")`.
   
-  - Relax independence across $\mathbf{z}_i$ using the
+  - Relax the independence across $\mathbf{z}_i$ using the
   probit seemingly unrelated BART (probit-suBART) prior of `r Citet(bib, "Esser2025")`.
 
-  <!-- - Incorporate the multiplicative gamma process prior of `r Citet(bib, "Bhattacharya2011")` in ZANIM-LN-BART model. -->
+  - Incorporate the multiplicative gamma process prior of `r Citet(bib, "Bhattacharya2011")` in ZANIM-LN-BART model.
+]
+
 
 ---
 count: false
